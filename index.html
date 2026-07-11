@@ -674,10 +674,22 @@
     roll = null;
     render();
   }
+  // Fills each open slot the way a manual run would: deal a random hand
+  // of ROLL_SIZE players, take the highest OVR from it. A hand already
+  // shown on screen is used for the first fill instead of being wasted.
   function autoFill() {
-    var fills = sample(availablePool(), openCount());
-    for (var s = 0; s < SLOT_COUNT && fills.length; s++) {
-      if (!slots[s]) slots[s] = fills.shift();
+    var hand = roll;
+    while (openCount() > 0) {
+      if (!hand || !hand.length) hand = sample(availablePool(), ROLL_SIZE);
+      if (!hand.length) break;
+      var best = hand[0];
+      for (var i = 1; i < hand.length; i++) {
+        if (hand[i].ovr > best.ovr) best = hand[i];
+      }
+      for (var s = 0; s < SLOT_COUNT; s++) {
+        if (!slots[s]) { slots[s] = best; break; }
+      }
+      hand = null;
     }
     roll = null;
     render();
