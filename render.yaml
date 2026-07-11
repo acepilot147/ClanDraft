@@ -1,0 +1,7 @@
+services:
+  - type: web
+    name: clandraft
+    runtime: static
+    buildCommand: ""
+    staticPublishPath: .
+    pullRequestPreviewsEnabled: false
