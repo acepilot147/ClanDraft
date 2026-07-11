@@ -605,6 +605,7 @@
         html += '<div class="who"><span class="name">' + esc(p.name) + "</span>";
         html += '<span class="tier-pill" style="color:' + p.color + '">' + p.tier + "</span>";
         if (p.clan) html += '<span class="clan-chip">' + esc(p.clan) + "</span>";
+        html += '<span class="year-chip">' + p.year + "</span>";
         if (leaderIdx === i) html += '<span class="lead-chip">&#9819; LEADER</span>';
         html += "</div>";
         html += '<div class="ovr-wrap"><span class="ovr" style="color:' + p.color + '">' + p.ovr + "</span>";
@@ -657,6 +658,7 @@
       html += '<button type="button" class="btn-outline" id="btn-reroll"' + (rerollsLeft <= 0 ? " disabled" : "") +
         ">&#8635; Reroll</button>";
       html += '<button type="button" class="btn-light" id="btn-auto">Auto-fill</button>';
+      html += '<button type="button" class="btn-outline" id="btn-new">+ New run</button>';
       html += "</div>";
       html += '<div class="caption under">TAKE ONE PLAYER &middot; ' + open + " SLOT" + (open === 1 ? "" : "S") + " LEFT</div>";
     } else {
