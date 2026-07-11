@@ -483,10 +483,11 @@
       -webkit-overflow-scrolling: touch;
       overscroll-behavior: contain;
     }
-    /* size panes to their content so nothing hides below a fold; the
-       draft pane absorbs leftover space and is first to give it back */
-    .panel.roster { flex: 0 1 auto; }
-    .panel.draft  { flex: 1 2 auto; }
+    /* the roster window is pinned at its natural height so rolling a
+       team never resizes it or hides the power bar; the draft window
+       takes whatever is left and is the only pane that ever scrolls */
+    .panel.roster { flex: 0 0 auto; }
+    .panel.draft  { flex: 1 1 auto; }
     .panel > header {
       position: sticky;
       top: 0;
@@ -508,6 +509,27 @@
     .done-box .done-power { font-size: 26px; }
     .roll-foot { margin-top: 10px; }
     .stage .caption.under { margin-top: 8px; }
+  }
+  /* Short phone viewports (Safari's toolbars eat ~180px): tighten
+     further so the pinned roster leaves the draft window enough room
+     to show a whole 5-card roll. */
+  @media (max-width: 700px) and (max-height: 800px) {
+    .topbar { padding: 8px 12px 6px; }
+    .brand { font-size: 17px; }
+    .slot { min-height: 40px; padding: 5px 10px; }
+    .slot .who .name { font-size: 14px; }
+    .mini-box { padding: 6px 10px; }
+    .power { padding: 8px 12px 10px; }
+    .power .power-head { margin-bottom: 6px; }
+    .stage { padding: 8px 10px; }
+    .cards { gap: 5px; }
+    .card { padding: 7px 10px; }
+    .card .name { font-size: 14px; }
+    .roll-foot { margin-top: 6px; }
+    .stage .caption.under { display: none; }
+    .idle-box { padding: 14px 12px 12px; gap: 10px; }
+    .btn-roll { font-size: 14px; padding: 10px 24px; }
+    .done-box { padding: 14px 12px 12px; gap: 8px; }
   }
   @media (max-width: 480px) {
     .slot .tag, .mini-box .mini-label { flex-basis: 52px; }
