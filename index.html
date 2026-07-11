@@ -57,7 +57,7 @@
     line-height: 1.45;
     min-height: 100vh;
   }
-  button { cursor: pointer; }
+  button { cursor: pointer; touch-action: manipulation; }
   button:focus-visible {
     outline: 2px solid var(--cyan);
     outline-offset: 2px;
@@ -451,23 +451,70 @@
     .card { animation: none; }
     .bar .fill { transition: none; }
   }
+  /* Phone split view: roster window pinned on top, draft window below,
+     each pane scrolls on its own so picking a card never moves the page. */
+  @media (max-width: 700px) {
+    html, body { height: 100%; }
+    body {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      height: 100dvh;
+      min-height: 0;
+      overflow: hidden;
+    }
+    .topbar { flex: none; padding: 14px 14px 10px; }
+    .board {
+      flex: 1;
+      min-height: 0;
+      width: 100%;
+      flex-direction: column;
+      flex-wrap: nowrap;
+      align-items: stretch;
+      gap: 12px;
+      padding: 0 14px 12px;
+    }
+    .panel {
+      min-width: 0;
+      width: 100%;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior: contain;
+    }
+    .panel.roster { flex: 1 1 54%; }
+    .panel.draft  { flex: 1 1 46%; }
+    .panel > header {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      background: var(--surface);
+    }
+    .idle-box { padding: 26px 16px 22px; gap: 14px; }
+    .done-box { padding: 26px 16px 22px; }
+  }
   @media (max-width: 480px) {
-    .topbar { padding: 16px 14px 10px; }
-    .board { padding: 8px 14px 40px; gap: 14px; }
-    .panel { min-width: 0; }
-    .slot .tag, .mini-box .mini-label { flex-basis: 62px; }
-    .slot { gap: 8px; padding: 10px 12px; }
+    .slots { gap: 8px; padding: 12px 12px 0; }
+    .slot { gap: 8px; padding: 10px 12px; min-height: 52px; }
+    .slot .tag, .mini-box .mini-label { flex-basis: 56px; }
+    .slot .tag .role { font-size: 10px; }
     .slot .who { gap: 6px; }
-    .slot .who .name { font-size: 14px; min-width: 24px; }
-    .slot .who .clan-chip { max-width: 64px; }
-    .card { gap: 8px; }
+    .slot .who .name { font-size: 15px; min-width: 48px; }
+    .slot .who .clan-chip { max-width: 72px; }
+    /* the gold crown button already marks the leader; the chip only
+       steals width from the name on phones */
+    .slot .who .lead-chip { display: none; }
+    .slot .who .year-chip { display: none; }
+    .slot .ovr-wrap { gap: 8px; }
+    .card { gap: 8px; padding: 11px 12px; }
     .card .take { display: none; }
+    .card .name { font-size: 15px; }
     .card .tier-pill { width: 28px; }
     .card .clan-chip { width: 56px; }
     .card .year-chip { width: 34px; }
   }
   @media (max-width: 360px) {
     .slot .who .clan-chip { display: none; }
+    .card .clan-chip { display: none; }
   }
 </style>
 
