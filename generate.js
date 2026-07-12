@@ -39,6 +39,18 @@ function parseCSV(text) {
   return rows;
 }
 
+// Tier letters are derived from OVR; the thresholds reproduce the
+// hand-assigned Letter column the CSV used to carry.
+function tierFromOvr(ovr) {
+  if (ovr >= 97) return "X";
+  if (ovr >= 93) return "S+";
+  if (ovr >= 89) return "S";
+  if (ovr >= 80) return "A";
+  if (ovr >= 70) return "B";
+  if (ovr >= 65) return "C";
+  return "D";
+}
+
 function loadRows() {
   const raw = fs.readFileSync(CSV_PATH, "utf8");
   const [header, ...data] = parseCSV(raw);
@@ -46,7 +58,7 @@ function loadRows() {
   return data.map((r) => ({
     name: col(r, "Name"),
     ovr: Number(col(r, "OVR")),
-    tier: col(r, "Letter"),
+    tier: tierFromOvr(Number(col(r, "OVR"))),
     year: Number(col(r, "Year")),
     clan: col(r, "Clan") || "",
     source: col(r, "Source"),
