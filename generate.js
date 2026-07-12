@@ -52,7 +52,9 @@ function tierFromOvr(ovr) {
 }
 
 function loadRows() {
-  const raw = fs.readFileSync(CSV_PATH, "utf8");
+  // The regex strips a leading U+FEFF byte-order mark (invisible in most editors);
+  // spreadsheet apps re-add it to the CSV on save and it breaks header parsing.
+  const raw = fs.readFileSync(CSV_PATH, "utf8").replace(/^﻿/, "");
   const [header, ...data] = parseCSV(raw);
   const col = (r, name) => r[header.indexOf(name)];
   return data.map((r) => ({
@@ -82,8 +84,9 @@ function buildListPlayers(rows) {
 }
 
 // One entry per player: the highest-OVR row wins (ties broken by the more
-// recent year); its clan is used unless blank, in which case the most
-// recent year among the player's other rows that has a clan set is used.
+// recent year); its clan is used unless blank, in which case only the
+// immediately preceding year's row may supply it. If that row has no clan
+// either, the player shows no clan tag (old clans don't carry forward).
 function buildIndexPlayers(rows) {
   const byName = new Map();
   for (const r of rows) {
@@ -99,8 +102,8 @@ function buildIndexPlayers(rows) {
     }
     let clan = best.clan;
     if (!clan) {
-      const withClan = group.filter((r) => r.clan).sort((a, b) => b.year - a.year);
-      if (withClan.length) clan = withClan[0].clan;
+      const earlier = group.filter((r) => r.year < best.year).sort((a, b) => b.year - a.year);
+      if (earlier.length) clan = earlier[0].clan;
     }
     const player = { name, ovr: best.ovr, tier: best.tier, clan, year: best.year };
     if (group.some((r) => r.cheater)) player.cheater = true;
