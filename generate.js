@@ -56,12 +56,13 @@ function loadRows() {
   const [header, ...data] = parseCSV(raw);
   const col = (r, name) => r[header.indexOf(name)];
   return data.map((r) => ({
-    name: col(r, "Name"),
+    name: col(r, "Name").trim(),
     ovr: Number(col(r, "OVR")),
     tier: tierFromOvr(Number(col(r, "OVR"))),
-    year: Number(col(r, "Year")),
+    year: Number(col(r, "Year")) || 0,
     clan: col(r, "Clan") || "",
-    source: col(r, "Source"),
+    cheater: col(r, "Cheater") === "TRUE",
+    source: col(r, "Source") || "",
   }));
 }
 
@@ -97,7 +98,9 @@ function buildIndexPlayers(rows) {
       const withClan = group.filter((r) => r.clan).sort((a, b) => b.year - a.year);
       if (withClan.length) clan = withClan[0].clan;
     }
-    players.push({ name, ovr: best.ovr, tier: best.tier, clan, year: best.year });
+    const player = { name, ovr: best.ovr, tier: best.tier, clan, year: best.year };
+    if (group.some((r) => r.cheater)) player.cheater = true;
+    players.push(player);
   }
 
   players.sort((a, b) => b.ovr - a.ovr || a.name.localeCompare(b.name));
