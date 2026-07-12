@@ -477,6 +477,89 @@
   .tab.on { color: var(--cyan); border-color: var(--cyan); background: rgba(100, 209, 193, 0.08); }
   .view-hidden { display: none !important; }
 
+  /* ---------- settings ---------- */
+  .top-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    align-self: center;
+    position: relative;
+  }
+  .tab.gear {
+    font-size: 13px;
+    line-height: 1;
+    padding: 5px 9px;
+  }
+  .settings-pop {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    min-width: 240px;
+    background: var(--surface);
+    border: 1px solid var(--line2);
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    z-index: 50;
+  }
+  .settings-pop .pop-title {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--faint);
+    margin-bottom: 10px;
+  }
+  .setting-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    cursor: pointer;
+  }
+  .setting-name {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    color: var(--text);
+  }
+  .setting-desc {
+    display: block;
+    margin-top: 3px;
+    font-size: 9px;
+    font-weight: 400;
+    letter-spacing: 0.6px;
+    text-transform: none;
+    color: var(--faint);
+  }
+  .switch {
+    appearance: none;
+    -webkit-appearance: none;
+    flex: 0 0 34px;
+    width: 34px;
+    height: 18px;
+    margin: 0;
+    border: 1px solid var(--line2);
+    border-radius: 10px;
+    background: var(--bg);
+    position: relative;
+    cursor: pointer;
+  }
+  .switch::after {
+    content: "";
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--faint);
+    transition: left 0.15s ease, background 0.15s ease;
+  }
+  .switch:checked { border-color: var(--cyan); background: rgba(100, 209, 193, 0.12); }
+  .switch:checked::after { left: 18px; background: var(--cyan); }
+
   /* ---------- tier list view ---------- */
   .listview {
     max-width: 1180px;
@@ -783,7 +866,17 @@
     <button type="button" class="tab on" id="tab-draft" aria-pressed="true">Draft</button>
     <button type="button" class="tab" id="tab-list" aria-pressed="false">Tier List</button>
   </nav>
-  <div class="src">Combined clanner lists 2016&ndash;2026 &middot; <span id="pool-size"></span> players</div>
+  <div class="top-right">
+    <div class="src">Combined clanner lists 2016&ndash;2026 &middot; <span id="pool-size"></span> players</div>
+    <button type="button" class="tab gear" id="btn-settings" aria-haspopup="true" aria-expanded="false" aria-label="Settings" title="Settings">&#9881;</button>
+    <div class="settings-pop" id="settings-pop" hidden>
+      <div class="pop-title">Settings</div>
+      <label class="setting-row">
+        <span class="setting-name">Blind mode<span class="setting-desc">Hide ratings until the roster is complete</span></span>
+        <input type="checkbox" class="switch" id="opt-blind">
+      </label>
+    </div>
+  </div>
 </div>
 
 <main class="board" id="view-draft">
@@ -862,6 +955,15 @@
   var roll = null;
   var rerollsLeft = REROLLS_MAX;
 
+  var BLIND_KEY = "clanDraftBlindMode";
+  var blindMode = false;
+  try { blindMode = localStorage.getItem(BLIND_KEY) === "1"; } catch (e) {}
+  // Blind mode keeps ratings masked while the run is live; everything
+  // reveals once the fifth slot locks.
+  function ratingsHidden() {
+    return blindMode && openCount() > 0;
+  }
+
   document.getElementById("pool-size").textContent = PLAYERS.length;
 
   function lockedNames() {
@@ -914,16 +1016,21 @@
     render();
   }
   // Fills each open slot the way a manual run would: deal a random hand
-  // of ROLL_SIZE players, take the highest OVR from it. A hand already
-  // shown on screen is used for the first fill instead of being wasted.
+  // of ROLL_SIZE players, take the highest OVR from it (a random one in
+  // blind mode, where a manual pick can't see ratings either). A hand
+  // already shown on screen is used for the first fill instead of being wasted.
   function autoFill() {
     var hand = roll;
     while (openCount() > 0) {
       if (!hand || !hand.length) hand = sample(availablePool(), ROLL_SIZE);
       if (!hand.length) break;
       var best = hand[0];
-      for (var i = 1; i < hand.length; i++) {
-        if (hand[i].ovr > best.ovr) best = hand[i];
+      if (blindMode) {
+        best = hand[Math.floor(Math.random() * hand.length)];
+      } else {
+        for (var i = 1; i < hand.length; i++) {
+          if (hand[i].ovr > best.ovr) best = hand[i];
+        }
       }
       for (var s = 0; s < SLOT_COUNT; s++) {
         if (!slots[s]) { slots[s] = best; break; }
@@ -954,14 +1061,16 @@
       html += '<div class="tag"><div class="role">SLOT ' + (i + 1) + "</div>";
       html += '<div class="state">' + (p ? "LOCKED" : "OPEN") + "</div></div>";
       if (p) {
+        var hidden = ratingsHidden();
+        var color = hidden ? "var(--muted)" : p.color;
         html += '<div class="who"><span class="name">' + esc(p.name) + "</span>";
         if (p.cheater) html += '<span class="cheat-chip">CHEATER</span>';
-        html += '<span class="tier-pill" style="color:' + p.color + '">' + p.tier + "</span>";
+        html += '<span class="tier-pill" style="color:' + color + '">' + (hidden ? "?" : p.tier) + "</span>";
         if (p.clan) html += '<span class="clan-chip">' + esc(p.clan) + "</span>";
         if (p.year) html += '<span class="year-chip">' + p.year + "</span>";
         if (leaderIdx === i) html += '<span class="lead-chip">&#9819; LEADER</span>';
         html += "</div>";
-        html += '<div class="ovr-wrap"><span class="ovr" style="color:' + p.color + '">' + p.ovr + "</span>";
+        html += '<div class="ovr-wrap"><span class="ovr" style="color:' + color + '">' + (hidden ? "??" : p.ovr) + "</span>";
         html += '<button type="button" class="crown' + (leaderIdx === i ? " on" : "") +
           '" data-slot="' + i + '" aria-pressed="' + (leaderIdx === i) +
           '" title="Lock in as leader" aria-label="Lock in ' + esc(p.name) + ' as leader">&#9819;</button></div>';
@@ -996,15 +1105,17 @@
     } else if (roll) {
       html += '<div class="cards">';
       roll.forEach(function (p, i) {
+        var hidden = ratingsHidden();
+        var color = hidden ? "var(--muted)" : p.color;
         html += '<button type="button" class="card" data-pick="' + i + '" style="animation-delay:' + i * 45 + 'ms">';
         html += '<span class="name">' + esc(p.name) + "</span>";
         if (p.cheater) html += '<span class="cheat-chip">CHEATER</span>';
         html += '<span class="take">TAKE &rarr;</span>';
-        html += '<span class="tier-pill" style="color:' + p.color + '">' + p.tier + "</span>";
+        html += '<span class="tier-pill" style="color:' + color + '">' + (hidden ? "?" : p.tier) + "</span>";
         html += '<span class="clan-chip' + (p.clan ? '' : ' empty') + '"' +
           (p.clan ? ' title="' + esc(p.clan) + '"' : '') + '>' + (p.clan ? esc(p.clan) : "") + "</span>";
         html += '<span class="year-chip">' + (p.year || "&mdash;") + "</span>";
-        html += '<span class="ovr" style="color:' + p.color + '">' + p.ovr + "</span>";
+        html += '<span class="ovr" style="color:' + color + '">' + (hidden ? "??" : p.ovr) + "</span>";
         html += "</button>";
       });
       html += "</div>";
@@ -1062,6 +1173,10 @@
       numEl.textContent = "—";
       fillEl.style.width = "0%";
       hintEl.innerHTML = "lock players to <b>build power</b>";
+    } else if (ratingsHidden()) {
+      numEl.textContent = "??";
+      fillEl.style.width = "0%";
+      hintEl.innerHTML = "blind mode &middot; ratings reveal <b>when the run ends</b>";
     } else {
       var sum = 0;
       slots.forEach(function (p) { if (p) sum += p.ovr; });
@@ -1231,6 +1346,36 @@
   }
   tabDraft.addEventListener("click", function () { setView(false); });
   tabList.addEventListener("click", function () { setView(true); });
+
+  /* ---------- settings ---------- */
+  var gearBtn = document.getElementById("btn-settings");
+  var settingsPop = document.getElementById("settings-pop");
+  var blindOpt = document.getElementById("opt-blind");
+
+  blindOpt.checked = blindMode;
+
+  function setSettingsOpen(open) {
+    settingsPop.hidden = !open;
+    gearBtn.classList.toggle("on", open);
+    gearBtn.setAttribute("aria-expanded", String(open));
+  }
+  gearBtn.addEventListener("click", function () {
+    setSettingsOpen(settingsPop.hidden);
+  });
+  document.addEventListener("click", function (e) {
+    if (settingsPop.hidden) return;
+    if (gearBtn.contains(e.target) || settingsPop.contains(e.target)) return;
+    setSettingsOpen(false);
+  });
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape" && !settingsPop.hidden) setSettingsOpen(false);
+  });
+
+  blindOpt.addEventListener("change", function () {
+    blindMode = this.checked;
+    try { localStorage.setItem(BLIND_KEY, blindMode ? "1" : "0"); } catch (e) {}
+    render();
+  });
 </script>
 
 </body>
