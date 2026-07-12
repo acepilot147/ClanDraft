@@ -50,7 +50,6 @@ function loadRows() {
     year: Number(col(r, "Year")),
     clan: col(r, "Clan") || "",
     source: col(r, "Source"),
-    canonical: col(r, "Canonical") || col(r, "Name"),
   }));
 }
 
@@ -62,7 +61,6 @@ function buildListPlayers(rows) {
     year: r.year,
     clan: r.clan,
     source: r.source,
-    canonical: r.canonical,
   }));
 }
 
@@ -70,14 +68,14 @@ function buildListPlayers(rows) {
 // recent year); its clan is used unless blank, in which case the most
 // recent year among the player's other rows that has a clan set is used.
 function buildIndexPlayers(rows) {
-  const byCanon = new Map();
+  const byName = new Map();
   for (const r of rows) {
-    if (!byCanon.has(r.canonical)) byCanon.set(r.canonical, []);
-    byCanon.get(r.canonical).push(r);
+    if (!byName.has(r.name)) byName.set(r.name, []);
+    byName.get(r.name).push(r);
   }
 
   const players = [];
-  for (const [canonical, group] of byCanon) {
+  for (const [name, group] of byName) {
     let best = group[0];
     for (const r of group) {
       if (r.ovr > best.ovr || (r.ovr === best.ovr && r.year > best.year)) best = r;
@@ -87,7 +85,7 @@ function buildIndexPlayers(rows) {
       const withClan = group.filter((r) => r.clan).sort((a, b) => b.year - a.year);
       if (withClan.length) clan = withClan[0].clan;
     }
-    players.push({ name: canonical, ovr: best.ovr, tier: best.tier, clan, year: best.year });
+    players.push({ name, ovr: best.ovr, tier: best.tier, clan, year: best.year });
   }
 
   players.sort((a, b) => b.ovr - a.ovr || a.name.localeCompare(b.name));
