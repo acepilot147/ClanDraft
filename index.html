@@ -560,6 +560,34 @@
   .switch:checked { border-color: var(--cyan); background: rgba(100, 209, 193, 0.12); }
   .switch:checked::after { left: 18px; background: var(--cyan); }
 
+  .blind-flag[hidden] { display: none; }
+  .blind-flag {
+    display: inline-block;
+    vertical-align: 2px;
+    margin-left: 8px;
+    font-family: var(--mono);
+    font-size: 8px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    color: #b58cf0;
+    border: 1px solid #4a3a6e;
+    background: #140f22;
+    border-radius: var(--radius);
+    padding: 2px 7px;
+  }
+  .done-box .done-blind {
+    display: inline-block;
+    margin: 0 auto 16px;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    color: #b58cf0;
+    border: 1px solid #4a3a6e;
+    background: #140f22;
+    border-radius: var(--radius);
+    padding: 3px 9px;
+  }
+
   /* ---------- tier list view ---------- */
   .listview {
     max-width: 1180px;
@@ -882,7 +910,7 @@
 <main class="board" id="view-draft">
   <section class="panel roster" aria-label="Your roster">
     <header>
-      <h1>Your Roster</h1>
+      <h1>Your Roster <span class="blind-flag" id="blind-flag" hidden>BLIND</span></h1>
       <span class="stat" id="lock-stat">0 / 5 LOCKED</span>
     </header>
     <div class="slots" id="slots"></div>
@@ -1098,6 +1126,7 @@
       slots.forEach(function (p) { sum += p.ovr; });
       html += '<div class="done-box">';
       html += '<div class="done-title">Roster Complete</div>';
+      if (blindMode) html += '<div class="done-blind">BLIND RUN</div>';
       html += '<div class="done-power">' + Math.round(sum / SLOT_COUNT) + ' <span class="unit">PWR</span></div>';
       if (leaderIdx === null) html += '<div class="caption">TIP: HIT &#9819; ON A PLAYER TO LOCK IN A LEADER</div>';
       html += '<button type="button" class="btn-outline" id="btn-new">+ New run</button>';
@@ -1154,6 +1183,7 @@
 
   function renderMeta() {
     var locked = SLOT_COUNT - openCount();
+    document.getElementById("blind-flag").hidden = !blindMode;
     document.getElementById("lock-stat").textContent = locked + " / " + SLOT_COUNT + " LOCKED";
     document.getElementById("reroll-stat").textContent = rerollsLeft + " / " + REROLLS_MAX + " REROLLS";
 
