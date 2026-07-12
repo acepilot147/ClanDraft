@@ -67,14 +67,18 @@ function loadRows() {
 }
 
 function buildListPlayers(rows) {
-  return rows.map((r) => ({
-    name: r.name,
-    ovr: r.ovr,
-    tier: r.tier,
-    year: r.year,
-    clan: r.clan,
-    source: r.source,
-  }));
+  return rows.map((r) => {
+    const row = {
+      name: r.name,
+      ovr: r.ovr,
+      tier: r.tier,
+      year: r.year,
+      clan: r.clan,
+      source: r.source,
+    };
+    if (r.cheater) row.cheater = true;
+    return row;
+  });
 }
 
 // One entry per player: the highest-OVR row wins (ties broken by the more
@@ -107,25 +111,26 @@ function buildIndexPlayers(rows) {
   return players;
 }
 
-function replacePlayersArray(html, players) {
-  const marker = "var PLAYERS = ";
+function replaceArray(html, marker, arr) {
   const start = html.indexOf(marker);
-  if (start === -1) throw new Error("could not find `var PLAYERS = ` in file");
+  if (start === -1) throw new Error("could not find `" + marker + "` in file");
   const arrayStart = start + marker.length;
   const arrayEnd = html.indexOf("];", arrayStart) + 2;
-  return html.slice(0, arrayStart) + JSON.stringify(players) + ";" + html.slice(arrayEnd);
+  return html.slice(0, arrayStart) + JSON.stringify(arr) + ";" + html.slice(arrayEnd);
 }
 
 function main() {
   const rows = loadRows();
 
-  const indexHtml = fs.readFileSync(INDEX_PATH, "utf8");
-  fs.writeFileSync(INDEX_PATH, replacePlayersArray(indexHtml, buildIndexPlayers(rows)));
+  let indexHtml = fs.readFileSync(INDEX_PATH, "utf8");
+  indexHtml = replaceArray(indexHtml, "var PLAYERS = ", buildIndexPlayers(rows));
+  indexHtml = replaceArray(indexHtml, "var ROWS = ", buildListPlayers(rows));
+  fs.writeFileSync(INDEX_PATH, indexHtml);
 
   const listHtml = fs.readFileSync(LIST_PATH, "utf8");
-  fs.writeFileSync(LIST_PATH, replacePlayersArray(listHtml, buildListPlayers(rows)));
+  fs.writeFileSync(LIST_PATH, replaceArray(listHtml, "var PLAYERS = ", buildListPlayers(rows)));
 
-  console.log(`Regenerated PLAYERS in index.html (${buildIndexPlayers(rows).length} players) and list.html (${rows.length} rows) from CombinedLists.csv.`);
+  console.log(`Regenerated PLAYERS+ROWS in index.html (${buildIndexPlayers(rows).length} players) and list.html (${rows.length} rows) from CombinedLists.csv.`);
 }
 
 main();
