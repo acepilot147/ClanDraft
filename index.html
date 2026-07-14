@@ -377,6 +377,8 @@
     border-radius: var(--radius);
     color: var(--text);
     padding: 11px 14px;
+    position: relative;
+    overflow: hidden;
     animation: deal 0.25s ease backwards;
   }
   .card:hover { border-color: var(--cyan); background: var(--bg2); }
@@ -427,6 +429,68 @@
     from { opacity: 0; transform: translateY(6px); }
     to   { opacity: 1; transform: none; }
   }
+
+  /* ---------- rare pick effects (S / S+ gold, X purple) ---------- */
+  .rare-gold, .picked-gold { --rare: #e8c878; --rare-soft: rgba(232, 200, 120, 0.35); }
+  .rare-x,    .picked-x    { --rare: #b58cf0; --rare-soft: rgba(181, 140, 240, 0.45); }
+  .card.rare-gold, .card.rare-x {
+    border-color: var(--rare-soft);
+    animation: deal 0.25s ease backwards, idle-glow 1.8s ease-in-out infinite;
+  }
+  .slot.rare-gold, .slot.rare-x {
+    border-color: var(--rare-soft);
+    border-left-color: var(--sc); /* keep the slot's accent stripe */
+    animation: idle-glow 1.8s ease-in-out infinite;
+  }
+  @keyframes idle-glow {
+    0%, 100% { box-shadow: 0 0 6px 0 var(--rare-soft); }
+    50%      { box-shadow: 0 0 14px 2px var(--rare-soft); }
+  }
+  .card.picked-gold, .card.picked-x {
+    pointer-events: none;
+    border-color: var(--rare);
+    /* Replaces the deal animation, so the inline deal stagger delay must be
+       cleared in JS or the card blinks out while it waits to restart. */
+    animation: rare-glow 0.3s ease forwards;
+  }
+  .card.picked-gold::after, .card.picked-x::after {
+    content: "";
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: linear-gradient(105deg,
+      transparent 25%,
+      var(--rare-soft) 45%,
+      var(--rare) 50%,
+      var(--rare-soft) 55%,
+      transparent 75%);
+    opacity: 0.55;
+    transform: translateX(-100%);
+    animation: rare-sweep 0.25s ease-out forwards;
+  }
+  @keyframes rare-sweep {
+    to { transform: translateX(100%); }
+  }
+  @keyframes rare-glow {
+    0%   { box-shadow: 0 0 0 0 transparent; }
+    30%  { box-shadow: 0 0 24px 3px var(--rare-soft), 0 0 6px 0 var(--rare); }
+    100% { box-shadow: 0 0 10px 1px var(--rare-soft); }
+  }
+  .card.picked-x::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(216, 186, 255, 0.9);
+    opacity: 0;
+    animation: x-burst 0.28s ease-out forwards;
+  }
+  @keyframes x-burst {
+    0%   { opacity: 0; }
+    18%  { opacity: 1; }
+    100% { opacity: 0; }
+  }
+
   .roll-foot {
     display: flex;
     justify-content: center;
@@ -982,6 +1046,9 @@
   var leaderIdx = null;
   var roll = null;
   var rerollsLeft = REROLLS_MAX;
+  // True while a rare-pick animation is playing; the roll shown on screen is
+  // already spoken for, so every state-changing action must bail until commit.
+  var picking = false;
 
   var BLIND_KEY = "clanDraftBlindMode";
   var blindMode = false;
@@ -1026,7 +1093,7 @@
     render();
   }
   function doReroll() {
-    if (!roll || rerollsLeft <= 0) return;
+    if (picking || !roll || rerollsLeft <= 0) return;
     rerollsLeft--;
     var shown = {};
     roll.forEach(function (p) { shown[p.name] = true; });
@@ -1034,20 +1101,37 @@
     roll = fresh.length >= ROLL_SIZE ? sample(fresh, ROLL_SIZE) : sample(availablePool(), ROLL_SIZE);
     render();
   }
-  function pick(i) {
-    if (!roll || !roll[i]) return;
+  function pick(i, cardEl) {
+    if (picking || !roll || !roll[i]) return;
     var player = roll[i];
-    for (var s = 0; s < SLOT_COUNT; s++) {
-      if (!slots[s]) { slots[s] = player; break; }
+    function commit() {
+      picking = false;
+      for (var s = 0; s < SLOT_COUNT; s++) {
+        if (!slots[s]) { slots[s] = player; break; }
+      }
+      roll = null;
+      render();
     }
-    roll = null;
-    render();
+    // Rare-tier picks flash the card before the roster updates. Skipped in
+    // blind mode: the color would give away the hidden tier.
+    var rare = !ratingsHidden() && (player.tier === "X" || player.tier === "S+" || player.tier === "S");
+    if (!rare || !cardEl) { commit(); return; }
+    picking = true;
+    cardEl.style.animationDelay = "0ms";
+    if (player.tier === "X") {
+      cardEl.classList.add("picked-x");
+      setTimeout(commit, 280);
+    } else {
+      cardEl.classList.add("picked-gold");
+      setTimeout(commit, 230);
+    }
   }
   // Fills each open slot the way a manual run would: deal a random hand
   // of ROLL_SIZE players, take the highest OVR from it (a random one in
   // blind mode, where a manual pick can't see ratings either). A hand
   // already shown on screen is used for the first fill instead of being wasted.
   function autoFill() {
+    if (picking) return;
     var hand = roll;
     while (openCount() > 0) {
       if (!hand || !hand.length) hand = sample(availablePool(), ROLL_SIZE);
@@ -1069,6 +1153,7 @@
     render();
   }
   function newRun() {
+    if (picking) return;
     slots = [null, null, null, null, null];
     leaderIdx = null;
     roll = null;
@@ -1085,7 +1170,12 @@
     var html = "";
     for (var i = 0; i < SLOT_COUNT; i++) {
       var p = slots[i];
-      html += '<div class="slot" style="--sc:' + SLOT_ACCENTS[i] + '">';
+      var rareClass = "";
+      if (p && !ratingsHidden()) {
+        if (p.tier === "X") rareClass = " rare-x";
+        else if (p.tier === "S+" || p.tier === "S") rareClass = " rare-gold";
+      }
+      html += '<div class="slot' + rareClass + '" style="--sc:' + SLOT_ACCENTS[i] + '">';
       html += '<div class="tag"><div class="role">SLOT ' + (i + 1) + "</div>";
       html += '<div class="state">' + (p ? "LOCKED" : "OPEN") + "</div></div>";
       if (p) {
@@ -1136,7 +1226,12 @@
       roll.forEach(function (p, i) {
         var hidden = ratingsHidden();
         var color = hidden ? "var(--muted)" : p.color;
-        html += '<button type="button" class="card" data-pick="' + i + '" style="animation-delay:' + i * 45 + 'ms">';
+        var rareClass = "";
+        if (!hidden) {
+          if (p.tier === "X") rareClass = " rare-x";
+          else if (p.tier === "S+" || p.tier === "S") rareClass = " rare-gold";
+        }
+        html += '<button type="button" class="card' + rareClass + '" data-pick="' + i + '" style="animation-delay:' + i * 45 + 'ms">';
         html += '<span class="name">' + esc(p.name) + "</span>";
         if (p.cheater) html += '<span class="cheat-chip">CHEATER</span>';
         html += '<span class="take">TAKE &rarr;</span>';
@@ -1176,7 +1271,7 @@
     var cards = stage.querySelectorAll(".card");
     for (var i = 0; i < cards.length; i++) {
       cards[i].addEventListener("click", function () {
-        pick(parseInt(this.getAttribute("data-pick"), 10));
+        pick(parseInt(this.getAttribute("data-pick"), 10), this);
       });
     }
   }
