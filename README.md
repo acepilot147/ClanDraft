@@ -7,6 +7,16 @@ Two self-contained static pages for browsing clan/player draft data.
 
 Both pages embed their data inline, so no build step or server-side code is required.
 
+## Visit counts
+
+Each page pings a free anonymous counter ([counterapi.dev](https://counterapi.dev)) on load.
+Check the totals here:
+
+- index: <https://api.counterapi.dev/v1/clandraft-buildteam/index/>
+- list: <https://api.counterapi.dev/v1/clandraft-buildteam/list/>
+
+The `count` field in the JSON response is the number of visits.
+
 ## Deploy on Render
 
 This repo includes a `render.yaml` blueprint for a static site with no build command, publishing the repo root.
