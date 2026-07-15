@@ -37,6 +37,8 @@ Two recurring gotchas:
 | s2n_phino | phinozilla | |
 | Drreaamzz | InYourDrx4mz | |
 | RangerRoysReturn | TealMagician2 | |
+| dreaddfuI | dreaddful | |
+| no_logic | no_iogic | |
 
 ## Do NOT merge (distinct players with confusable names)
 
