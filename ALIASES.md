@@ -39,6 +39,7 @@ Two recurring gotchas:
 | RangerRoysReturn | TealMagician2 | |
 | dreaddfuI | dreaddful | |
 | no_logic | no_iogic | |
+| FeatherRedemption | FeatherRemeption | 2020 row was misspelled |
 
 ## Do NOT merge (distinct players with confusable names)
 
