@@ -830,20 +830,39 @@
   .g-summary .g-perfect { color: var(--gold); font-size: 11px; font-weight: 700; letter-spacing: 2px; }
 
   @media (max-width: 700px) {
-    .gauntlet-wrap {
-      flex: 1 1 auto;
-      min-height: 0;
-      overflow-y: auto;
-      -webkit-overflow-scrolling: touch;
-      overscroll-behavior: contain;
-      padding: 0 12px 10px;
+    /* Once the gauntlet is on screen the split-view stops making sense:
+       body.g-on switches the page back to normal scrolling flow, so the
+       roster, draft, and gauntlet stack without covering each other. */
+    body.g-on {
+      display: block;
+      height: auto;
+      overflow: auto;
     }
+    body.g-on .board { flex: none; }
+    body.g-on .panel { overflow-y: visible; }
+    body.g-on .panel.roster, body.g-on .panel.draft { flex: none; }
+    .gauntlet-wrap { padding: 0 12px 24px; }
     .g-stage { padding: 10px; }
-    .g-cal { grid-template-columns: repeat(5, 1fr); gap: 5px; }
-    .g-day { min-height: 58px; padding: 5px 6px; }
+    /* three day cells per row, each wide enough for "L 1107-1200" */
+    .g-cal { grid-template-columns: repeat(3, 1fr); gap: 5px; }
+    .g-day { min-height: 56px; padding: 5px 6px; }
     .g-day .d-map { display: none; }
-    .g-versus { gap: 8px; }
+    .g-day .d-res { font-size: 8.5px; letter-spacing: 0.3px; }
+    /* the middle column shrinks to just the day label so the two fives
+       get the width; rows drop identity chips to keep names on one line */
+    .g-versus { gap: 6px; }
+    .g-mid { max-width: 52px; padding: 0 2px; gap: 4px; }
+    .g-mid .vs, .g-mid .g-res, .g-mid .g-sub-mode { display: none; }
+    .g-mid .g-sub-day { font-size: 9px; font-weight: 700; color: var(--muted); }
+    .g-team { padding: 8px; }
+    .g-team li { gap: 5px; }
     .g-team li .tier-pill { display: none; }
+    .g-team li .ptag { display: none; }
+    .g-team li .nm { font-size: 13px; }
+    .g-team li .ld { font-size: 10px; }
+    .g-team li .boost-tag { font-size: 8px; letter-spacing: 0; }
+    .g-team li .p-ovr { font-size: 11px; }
+    .g-teamtags .tt-side { flex-basis: 100%; }
   }
 
   /* ---------- topbar tabs ---------- */
@@ -2196,7 +2215,9 @@
     } else if (animating) {
       html += '<span class="g-res">&#8853; DAY BONUSES</span>';
     }
-    html += '<span class="g-sub">' + (sel ? "DAY " + sel.day + " · " + esc(evMode(sel).label) : "SELECT A DAY") + "</span>";
+    html += '<span class="g-sub">' + (sel
+      ? '<span class="g-sub-day">DAY ' + sel.day + '</span><span class="g-sub-mode"> · ' + esc(evMode(sel).label) + "</span>"
+      : "SELECT A DAY") + "</span>";
     html += "</div>";
     html += gTeamHTML("foe", foeTitle, foeTeam, foeLeader, foePwr, sel && sel.oppBoosts, showBoost, sel, true);
     html += "</div>";
@@ -2328,7 +2349,11 @@
     var wrap = document.getElementById("gauntlet-wrap");
     if (!wrap) return;
     var eligible = gauntletEligible();
-    wrap.classList.toggle("view-hidden", !eligible || listViewOn);
+    var show = eligible && !listViewOn;
+    wrap.classList.toggle("view-hidden", !show);
+    // On phones the split-view gives way to normal page flow while the
+    // gauntlet is on screen (see the body.g-on rules).
+    document.body.classList.toggle("g-on", show);
     if (!eligible) { gScrolled = false; return; }
     renderGauntlet();
     if (!listViewOn && !gScrolled) {
