@@ -1,4 +1,4 @@
-Name,OVR,Year,Clan,Leader,Class Player,Cheater,Source
+LegacyName,OVR,Year,Clan,Leader,Class Player,Cheater,Source
 Latedownload,99,2022,VAK,Elite,,,2023 tier list
 m_jor,98,2019,ARCON,Elite,,,all-time impact top 100
 oditty,98,2020,RSF,Experienced,,,all-time impact top 100
@@ -17,8 +17,8 @@ c4spian,96,2020,CSP,,,,2020 tier list
 outflash,96,2022,VAK,,,,2022 Summer Games draft
 V3KT,95,2022,VAK,,,,2022 Summer Games draft
 pastlight,95,2021,,,,,Growth interpolation
-blacklisting,95,2023,RoR,,,,2023 tier list
-Hugo_Nuts,95,2023,Snow Core,,,,2023 tier list
+blacklisting,94,2023,RoR,,,,2023 tier list
+omwhugo,95,2023,Snow Core,,,,2023 tier list
 chalst,95,2020,CSP,,,,2020 tier list
 Da_mas,95,2020,VAK,,,,2020 tier list
 draintic,95,2020,CSP,,,,2020 tier list
@@ -71,7 +71,7 @@ tokyosurfer,92,2021,,,,,all-time impact top 100
 C_talyst,92,2022,VAK,,,,2022 Summer Games draft
 frrags,92,2021,,,,,2021 CCL draft
 J_tson,92,2021,,,,,2021 CCL draft
-dibbix,92,2022,,,,,Personal
+dibbix,92,2022,RoA,,,,Personal
 faxyst,91,2022,VAK,,,,2022 Summer Games draft
 Commando_Jesus,91,2019,,,,,all-time impact top 100
 chalst,95,2019,,,,,all-time impact top 100
@@ -123,7 +123,7 @@ TORMENT_X,90,2021,,,,,all-time impact top 100
 vAbcelon,90,2021,,,,,all-time impact top 100
 C_talyst,90,2023,VAK,,,,2023 tier list
 cahpuh,90,2025,SOL,,,,Submission
-shintics,90,2026,,,,,Matcha tier list
+shintics,93,2026,IA,,,,Matcha tier list
 hecactia,93,2023,VAK,,,,2023 tier list
 hecactia,93,2025,VAK,,,,
 fireschoolbus1,90,2024,,,,,
@@ -158,7 +158,7 @@ tjejoker87,89,2020,,,,,2020 tier list
 Volstag,89,2020,VAK,,,,2020 tier list
 Warspell,89,2020,VAK,,,,2020 tier list
 mxrced,89,2026,,,,,Matcha tier list
-ReaperMagic,88,2026,VAK,,,,Matcha tier list
+ReaperMagic,89,2026,VAK,,,,Matcha tier list
 vurnextdoor,89,2024,RoR,,,,Submission
 cencede,89,2024,Snow Core,,,,Personal
 desolight,89,2024,,,,,
@@ -242,7 +242,7 @@ Moist_God,86,2020,,,,,all-time impact top 100
 DeadIyXI,86,2021,,,,,2021 gun-clanner list
 Hav00k,86,2021,,,,,2021 gun-clanner list
 Spellcore,86,2021,,,,,all-time impact top 100
-c4spian,86,2026,,,,,Matcha tier list
+c4spian,89,2026,,,,,Matcha tier list
 exirly,86,2026,,,,,Matcha tier list
 Iostvoicee,86,2026,,,,,Matcha tier list
 GFRafael,86,2023,RoA,,,,Personal
@@ -616,7 +616,7 @@ stynxz,77,2025,SOL,Experienced,,,Personal
 SCAHRFACE,76,2021,,,,,2021 CCL draft
 gr4bner,76,2021,,,,,2021 CCL draft
 iTzFunny,76,2021,,,,,2021 CCL draft
-Sidees,76,2021,,,,,2021 CCL draft
+Sidees,89,2021,,,,,2021 CCL draft
 Takayuhki,76,2021,,,,,2021 CCL draft
 V1nvoc,76,2021,,,,,2021 CCL draft
 notnko,76,2021,,,,,2021 CCL draft
@@ -646,7 +646,7 @@ ere7,76,2022,VAK,,,,2022 Summer Games draft
 SOA_spectre,76,2022,VAK,,,,2022 Summer Games draft
 Drainzeebe,76,2022,VAK,,,,2022 Summer Games draft
 cannneddog,76,2022,VAK,,,,2022 Summer Games draft
-Hugo_Nuts,76,2021,,,,,2021 CCL draft
+omwhugo,76,2021,,,,,2021 CCL draft
 palmgrip,76,2023,SOL,,,,Sol Cup 2023
 imperiummydrek,76,2023,SOL,,,,Sol Cup 2023
 deafsteal,76,2023,SOL,,,,Sol Cup 2023
@@ -840,8 +840,8 @@ RushAiot,71,2020,,,,,2020 tier list
 sp_artan,71,2020,Prime,,,,2020 tier list
 Vanixus,71,2020,,,,,2020 tier list
 Zkarex,71,2020,,,,,2020 tier list
-NiteOwlFac,71,2016,,,,,all-time impact top 100
-Allyrion,71,2020,,,,,2020 tier list
+NiteOwlFac,80,2016,,,,,all-time impact top 100
+Allyrion,73,2020,OP,,,,2020 tier list
 Laedere,71,2016,,,,,all-time impact top 100
 a_cemaster,70,2026,RoA,,,,Personal
 OpticIllusion101,70,2016,,,,,all-time impact top 100
@@ -852,7 +852,6 @@ frogfrog5,70,2021,,,,,Personal
 EnterScreenName,69,2017,,,,,all-time impact top 100
 vGrayboy,73,2026,VAK,,,,Matcha tier list
 Shatteroni,68,2017,,,,,all-time impact top 100
-Unfortunately,68,2020,,,,,all-time impact top 100
 rystanvx,68,2021,,,,,2021 gun-clanner list
 YungsterBeetleJuice,68,2021,,,,,2021 gun-clanner list
 lordtyler,67,2017,,,,,all-time impact top 100
@@ -870,7 +869,7 @@ yurk_xe,58,2026,BW,,,,Matcha tier list
 KeisukeHiraga,57,2026,UCR,,,,Submission
 AmazoXII,57,2026,,,,,
 waycheder,92,2024,,,,,
-jessdownload,94,2022,,,,,
+jessdownload,95,2022,,,,,
 alexthai,90,2022,,,,,
 Br_ce,93,2020,,,,,2020 CCL stats
 sybr,92,2020,,,,,2020 CCL stats
@@ -1122,4 +1121,5 @@ tokyosurfer,91,2020,,,,,Latest tier list
 unforspace,88,2020,,,,,Latest tier list
 notOSTS,84,2020,,,,,Latest tier list
 narits,84,2020,,,,,Latest tier list
-Ghostiox,84,2020,,,,,Latest tier list
+waffIicious,81,2026,,,,,Personal
+GeneralDroid,75,2026,,,,,Personal

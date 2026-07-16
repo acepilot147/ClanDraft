@@ -57,8 +57,10 @@ function loadRows() {
   const raw = fs.readFileSync(CSV_PATH, "utf8").replace(/^﻿/, "");
   const [header, ...data] = parseCSV(raw);
   const col = (r, name) => r[header.indexOf(name)];
+  // The name column was renamed Name -> LegacyName at some point; accept both.
+  const nameCol = header.indexOf("Name") !== -1 ? "Name" : "LegacyName";
   return data.map((r) => ({
-    name: col(r, "Name").trim(),
+    name: col(r, nameCol).trim(),
     ovr: Number(col(r, "OVR")),
     tier: tierFromOvr(Number(col(r, "OVR"))),
     year: Number(col(r, "Year")) || 0,
@@ -83,10 +85,12 @@ function buildListPlayers(rows) {
   });
 }
 
-// One entry per player: the highest-OVR row wins (ties broken by the more
-// recent year); its clan is used unless blank, in which case only the
-// immediately preceding year's row may supply it. If that row has no clan
-// either, the player shows no clan tag (old clans don't carry forward).
+// One entry per CSV row, so every year's variation of a player can show up
+// in the draft pool (not just their highest-OVR version). A row's clan is
+// used unless blank, in which case only the immediately preceding year's row
+// may supply it. If that row has no clan either, the entry shows no clan tag
+// (old clans don't carry forward). A cheater flag on any row marks the
+// person, so it applies to all of their variations.
 function buildIndexPlayers(rows) {
   const byName = new Map();
   for (const r of rows) {
@@ -96,21 +100,20 @@ function buildIndexPlayers(rows) {
 
   const players = [];
   for (const [name, group] of byName) {
-    let best = group[0];
+    const cheater = group.some((r) => r.cheater);
     for (const r of group) {
-      if (r.ovr > best.ovr || (r.ovr === best.ovr && r.year > best.year)) best = r;
+      let clan = r.clan;
+      if (!clan) {
+        const earlier = group.filter((g) => g.year < r.year).sort((a, b) => b.year - a.year);
+        if (earlier.length) clan = earlier[0].clan;
+      }
+      const player = { name, ovr: r.ovr, tier: r.tier, clan, year: r.year };
+      if (cheater) player.cheater = true;
+      players.push(player);
     }
-    let clan = best.clan;
-    if (!clan) {
-      const earlier = group.filter((r) => r.year < best.year).sort((a, b) => b.year - a.year);
-      if (earlier.length) clan = earlier[0].clan;
-    }
-    const player = { name, ovr: best.ovr, tier: best.tier, clan, year: best.year };
-    if (group.some((r) => r.cheater)) player.cheater = true;
-    players.push(player);
   }
 
-  players.sort((a, b) => b.ovr - a.ovr || a.name.localeCompare(b.name));
+  players.sort((a, b) => b.ovr - a.ovr || a.name.localeCompare(b.name) || b.year - a.year);
   return players;
 }
 
