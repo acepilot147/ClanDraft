@@ -671,7 +671,9 @@
     flex-direction: column;
     gap: 6px;
   }
-  .g-teamtags .tt-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  /* rows keep the same height whether they hold tag chips or the plain
+     "no squad advantages" text, so the rectangle never resizes */
+  .g-teamtags .tt-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; min-height: 19px; }
   .g-teamtags .tt-side {
     flex: 0 0 118px;
     font-size: 8px;
@@ -803,7 +805,7 @@
   .g-day .d-res.l { color: #f27d7d; }
   .g-day .d-res.tbd { color: var(--faint); font-weight: 400; }
 
-  .g-controls { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin: 14px 0 0; }
+  .g-controls { display: flex; flex-wrap: wrap; gap: 10px; justify-content: flex-start; margin: 0 0 12px; }
 
   .g-detail {
     margin-top: 14px;
@@ -2190,7 +2192,11 @@
         '<button type="button" class="btn-roll" id="g-start">Start Gauntlet</button>' +
         '</div></div>';
       var st = document.getElementById("g-start");
-      if (st) st.addEventListener("click", startGauntlet);
+      if (st) st.addEventListener("click", function () {
+        startGauntlet();
+        var w = document.getElementById("gauntlet-wrap");
+        if (w) w.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
       return;
     }
 
@@ -2263,6 +2269,13 @@
       html += "</div>";
     }
 
+    // --- controls: under the squad tags, ahead of the calendar ---
+    var allDone = rec.done === GAUNTLET_DAYS;
+    html += '<div class="g-controls">';
+    html += '<button type="button" class="btn-light" id="g-next"' + (allDone || gSimming ? " disabled" : "") + ">&#9876; Sim Next Day</button>";
+    html += '<button type="button" class="btn-outline" id="g-all"' + (allDone || gSimming ? " disabled" : "") + ">&#9193; Sim Rest of Month</button>";
+    html += "</div>";
+
     // --- 30-day calendar ---
     html += '<div class="g-cal">';
     gauntlet.days.forEach(function (ev, i) {
@@ -2278,13 +2291,6 @@
         : '<span class="d-res tbd">&mdash;</span>';
       html += "</button>";
     });
-    html += "</div>";
-
-    // --- controls ---
-    var allDone = rec.done === GAUNTLET_DAYS;
-    html += '<div class="g-controls">';
-    html += '<button type="button" class="btn-light" id="g-next"' + (allDone || gSimming ? " disabled" : "") + ">&#9876; Sim Next Day</button>";
-    html += '<button type="button" class="btn-outline" id="g-all"' + (allDone || gSimming ? " disabled" : "") + ">&#9193; Sim Rest of Month</button>";
     html += "</div>";
 
     // --- selected day: venue, result, home-field note ---
