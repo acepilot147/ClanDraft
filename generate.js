@@ -8,7 +8,7 @@ const fs = require("fs");
 const path = require("path");
 
 const ROOT = __dirname;
-const CSV_PATH = path.join(ROOT, "CombinedLists.csv");
+const CSV_PATH = path.join(ROOT, "..", "CombinedLists.csv");
 const INDEX_PATH = path.join(ROOT, "index.html");
 const LIST_PATH = path.join(ROOT, "list.html");
 
@@ -65,6 +65,7 @@ function loadRows() {
     tier: tierFromOvr(Number(col(r, "OVR"))),
     year: Number(col(r, "Year")) || 0,
     clan: col(r, "Clan") || "",
+    leader: (col(r, "Leader") || "").trim(),
     cheater: col(r, "Cheater") === "TRUE",
     source: col(r, "Source") || "",
   }));
@@ -101,6 +102,9 @@ function buildIndexPlayers(rows) {
   const players = [];
   for (const [name, group] of byName) {
     const cheater = group.some((r) => r.cheater);
+    // Leadership is a person-wide trait: the most recent row that carries a
+    // Leader class speaks for all of that player's yearly variations.
+    const leadRow = group.filter((g) => g.leader).sort((a, b) => b.year - a.year)[0];
     for (const r of group) {
       let clan = r.clan;
       if (!clan) {
@@ -108,6 +112,7 @@ function buildIndexPlayers(rows) {
         if (earlier.length) clan = earlier[0].clan;
       }
       const player = { name, ovr: r.ovr, tier: r.tier, clan, year: r.year };
+      if (leadRow) player.leader = leadRow.leader;
       if (cheater) player.cheater = true;
       players.push(player);
     }

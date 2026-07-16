@@ -2,10 +2,18 @@
 
 Two self-contained static pages for browsing clan/player draft data.
 
-- `index.html` - Clan Draft roster roller.
+- `index.html` - Clan Draft roster roller, plus the Gauntlet: a 30-day scrim/raid calendar simulated against your locked roster.
 - `list.html` - Player rankings, sourced from `CombinedLists.csv`.
 
 Both pages embed their data inline, so no build step or server-side code is required.
+
+## Data generation
+
+`CombinedLists.csv` lives one directory above the repo (`../CombinedLists.csv`), keeping the
+source sheet out of the deployed site. After editing it, run `node generate.js` to regenerate
+the embedded `PLAYERS`/`ROWS` arrays in both pages, then commit the updated HTML. The CSV's
+`Leader` column feeds the leadership classes (Elite/Experienced/Good/No Mic/Negative) used by
+the Gauntlet; players without a Leader value lead as Raw +0.
 
 ## Visit counts
 
