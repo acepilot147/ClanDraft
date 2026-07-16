@@ -246,6 +246,20 @@
   }
   .crown:hover { color: var(--gold); border-color: #57492a; }
   .crown.on { color: var(--gold); border-color: #57492a; background: #191507; }
+  /* Roster full but no leader crowned: the crowns glow to say "pick one" */
+  .crown.pick-me {
+    color: var(--gold);
+    border-color: #57492a;
+    animation: crown-pulse 1.5s ease-in-out infinite;
+  }
+  @keyframes crown-pulse {
+    0%, 100% { box-shadow: 0 0 4px 0 rgba(232, 200, 120, 0.3); }
+    50%      { box-shadow: 0 0 12px 2px rgba(232, 200, 120, 0.75); }
+  }
+  .mini-box .pick-hint { color: var(--gold); font-size: 10px; }
+  @media (prefers-reduced-motion: reduce) {
+    .crown.pick-me { animation: none; box-shadow: 0 0 8px 1px rgba(232, 200, 120, 0.5); }
+  }
 
   .leader-row { padding: 12px 14px 0; }
   .mini-box {
@@ -1575,9 +1589,11 @@
         if (leaderIdx === i) html += '<span class="lead-chip">&#9819; LEADER</span>';
         html += "</div>";
         html += '<div class="ovr-wrap"><span class="ovr" style="color:' + color + '">' + (hidden ? "??" : p.ovr) + "</span>";
-        html += '<button type="button" class="crown' + (leaderIdx === i ? " on" : "") +
+        var needLeader = leaderIdx === null && openCount() === 0;
+        html += '<button type="button" class="crown' + (leaderIdx === i ? " on" : "") + (needLeader ? " pick-me" : "") +
           '" data-slot="' + i + '" aria-pressed="' + (leaderIdx === i) +
-          '" title="Lock in as leader" aria-label="Lock in ' + esc(p.name) + ' as leader">&#9819;</button></div>';
+          '" title="' + (needLeader ? "Crown a leader &mdash; leaders give Gauntlet bonuses" : "Lock in as leader") +
+          '" aria-label="Lock in ' + esc(p.name) + ' as leader">&#9819;</button></div>';
       } else {
         html += '<div class="empty-hint">&mdash; roll a team and pick a clanner</div>';
       }
@@ -1683,7 +1699,8 @@
         (myLeadClass && !ratingsHidden() ? ' <span class="lead-chip">' + esc(myLeadClass.label) + "</span>" : "");
       leaderEl.className = "mini-val set";
     } else {
-      leaderEl.innerHTML = "&mdash; none &mdash;";
+      leaderEl.innerHTML = "&mdash; none &mdash;" +
+        (openCount() === 0 ? ' <span class="pick-hint">&uarr; hit a glowing &#9819; to crown a leader</span>' : "");
       leaderEl.className = "mini-val";
     }
 
