@@ -1543,7 +1543,6 @@
     roll = null;
     rerollsLeft = REROLLS_MAX;
     gauntlet = null;
-    gScrolled = false;
     render();
   }
   function toggleLeader(i) {
@@ -1810,7 +1809,6 @@
   var gauntlet = null;    // { days: [...], selected: idx|null }
   var gSimming = false;   // sim-all cascade in flight
   var gAnimDay = -1;      // day whose home-field boosts are animating
-  var gScrolled = false;  // auto-scroll fired for this completed roster
   var listViewOn = false;
 
   // Tier bands mirror the pool data; 100+ only exists via day-of boosts.
@@ -2354,14 +2352,9 @@
     // On phones the split-view gives way to normal page flow while the
     // gauntlet is on screen (see the body.g-on rules).
     document.body.classList.toggle("g-on", show);
-    if (!eligible) { gScrolled = false; return; }
-    renderGauntlet();
-    if (!listViewOn && !gScrolled) {
-      gScrolled = true;
-      setTimeout(function () {
-        wrap.scrollIntoView({ behavior: "smooth", block: "start" });
-      }, 60);
-    }
+    // No auto-scroll: finishing the roster often still needs a leader
+    // crowned first. The Enter Gauntlet button jumps down on demand.
+    if (eligible) renderGauntlet();
   }
 
   render();
