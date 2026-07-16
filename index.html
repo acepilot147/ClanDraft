@@ -861,8 +861,8 @@
     .g-stage { padding: 10px; }
     /* three day cells per row, each wide enough for "L 1107-1200" */
     .g-cal { grid-template-columns: repeat(3, 1fr); gap: 5px; }
-    .g-day { min-height: 56px; padding: 5px 6px; }
-    .g-day .d-map { display: none; }
+    .g-day { min-height: 62px; padding: 5px 6px; }
+    .g-day .d-map { font-size: 8px; }
     .g-day .d-res { font-size: 8.5px; letter-spacing: 0.3px; }
     /* the middle column shrinks to just the day label so the two fives
        get the width; rows drop identity chips to keep names on one line */
@@ -1591,10 +1591,13 @@
         if (leaderIdx === i) html += '<span class="lead-chip">&#9819; LEADER</span>';
         html += "</div>";
         html += '<div class="ovr-wrap"><span class="ovr" style="color:' + color + '">' + (hidden ? "??" : p.ovr) + "</span>";
-        var needLeader = leaderIdx === null && openCount() === 0;
-        html += '<button type="button" class="crown' + (leaderIdx === i ? " on" : "") + (needLeader ? " pick-me" : "") +
+        // Only crowns worth taking glow: players whose leadership class
+        // actually adds power (Elite/Experienced/Good).
+        var glowCrown = leaderIdx === null && openCount() === 0 &&
+          p.leader && (LEADER_CLASSES[p.leader] || 0) > 0;
+        html += '<button type="button" class="crown' + (leaderIdx === i ? " on" : "") + (glowCrown ? " pick-me" : "") +
           '" data-slot="' + i + '" aria-pressed="' + (leaderIdx === i) +
-          '" title="' + (needLeader ? "Crown a leader &mdash; leaders give Gauntlet bonuses" : "Lock in as leader") +
+          '" title="' + (glowCrown ? "Crown a leader &mdash; " + esc(p.leader) + " gives " + fmtAmt(LEADER_CLASSES[p.leader]) + " to the whole group" : "Lock in as leader") +
           '" aria-label="Lock in ' + esc(p.name) + ' as leader">&#9819;</button></div>';
       } else {
         html += '<div class="empty-hint">&mdash; roll a team and pick a clanner</div>';
@@ -1701,8 +1704,12 @@
         (myLeadClass && !ratingsHidden() ? ' <span class="lead-chip">' + esc(myLeadClass.label) + "</span>" : "");
       leaderEl.className = "mini-val set";
     } else {
+      var hasGoodLead = slots.some(function (p) {
+        return p && p.leader && (LEADER_CLASSES[p.leader] || 0) > 0;
+      });
       leaderEl.innerHTML = "&mdash; none &mdash;" +
-        (openCount() === 0 ? ' <span class="pick-hint">&uarr; hit a glowing &#9819; to crown a leader</span>' : "");
+        (openCount() === 0 && hasGoodLead
+          ? ' <span class="pick-hint">&uarr; hit a glowing &#9819; to crown a leader</span>' : "");
       leaderEl.className = "mini-val";
     }
 
