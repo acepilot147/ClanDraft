@@ -1178,6 +1178,115 @@
     letter-spacing: 1px;
     text-transform: uppercase;
   }
+  /* ---------- team builder view ---------- */
+  .team-search { position: relative; }
+  .suggest {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: -1px;
+    right: -1px;
+    background: var(--surface2);
+    border: 1px solid var(--line2);
+    border-radius: var(--radius);
+    box-shadow: 0 14px 30px rgba(0, 0, 0, 0.5);
+    max-height: 320px;
+    overflow: auto;
+    z-index: 30;
+  }
+  .suggest button {
+    all: unset;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 8px 12px;
+    cursor: pointer;
+    font-size: 13px;
+  }
+  .suggest button + button { border-top: 1px solid var(--line); }
+  .suggest button:hover, .suggest button.hi { background: var(--surface); }
+  .suggest .tier-pill { flex: none; }
+  .suggest .s-name {
+    flex: 1;
+    font-family: var(--display);
+    font-size: 14px;
+    font-weight: 500;
+    letter-spacing: 0.3px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .suggest .s-meta { flex: none; color: var(--faint); font-size: 10.5px; }
+  .suggest .s-ovr {
+    flex: none;
+    font-size: 14px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+  .suggest .s-none {
+    padding: 12px;
+    color: var(--faint);
+    font-size: 10px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    text-align: center;
+  }
+  .btn-add {
+    background: var(--cyan);
+    border: 1px solid var(--cyan);
+    border-radius: var(--radius);
+    color: var(--bg);
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    padding: 8px 14px;
+    cursor: pointer;
+  }
+  .btn-add:hover { filter: brightness(1.12); }
+  .team-summary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  .team-summary[hidden] { display: none; }
+  .team-stat {
+    flex: 1 1 140px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 10px 14px;
+  }
+  .team-stat .lbl {
+    display: block;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    color: var(--faint);
+    margin-bottom: 2px;
+  }
+  .team-stat .val {
+    font-family: var(--display);
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+  }
+  .btn-remove {
+    all: unset;
+    cursor: pointer;
+    color: var(--faint);
+    font-size: 14px;
+    line-height: 1;
+    padding: 2px 7px;
+    border-radius: var(--radius);
+  }
+  .btn-remove:hover { color: #f27d7d; background: var(--surface2); }
+  @media (max-width: 640px) {
+    #view-team th.h-year, #view-team th.h-clan, #view-team td.year { display: none; }
+  }
   ::-webkit-scrollbar { width: 10px; height: 10px; }
   ::-webkit-scrollbar-track { background: var(--bg); }
   ::-webkit-scrollbar-thumb { background: var(--line2); border-radius: 6px; }
@@ -1330,6 +1439,7 @@
   <nav class="tabs" aria-label="Views">
     <button type="button" class="tab on" id="tab-draft" aria-pressed="true">Draft</button>
     <button type="button" class="tab" id="tab-list" aria-pressed="false">Tier List</button>
+    <button type="button" class="tab" id="tab-team" aria-pressed="false">Team Builder</button>
   </nav>
   <div class="top-right">
     <div class="src">Combined clanner lists 2016&ndash;2026 &middot; <span id="pool-size"></span> players</div>
@@ -1405,6 +1515,35 @@
     <table>
       <thead><tr id="list-head"></tr></thead>
       <tbody id="list-body"></tbody>
+    </table>
+  </div>
+</main>
+
+<main class="listview view-hidden" id="view-team" aria-label="Team builder">
+  <div class="controls">
+    <div class="search-box team-search">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" id="team-search" placeholder="Type a player name&hellip;" autocomplete="off" role="combobox" aria-expanded="false" aria-autocomplete="list" aria-controls="team-suggest">
+      <div class="suggest" id="team-suggest" hidden></div>
+    </div>
+    <button type="button" class="btn-add" id="team-add">+ Add Player</button>
+    <button type="button" class="btn-clear" id="team-clear">Clear Team</button>
+  </div>
+  <div class="team-summary" id="team-summary" hidden>
+    <div class="team-stat">
+      <span class="lbl">Players</span>
+      <span class="val" id="team-stat-size">0</span>
+    </div>
+    <div class="team-stat">
+      <span class="lbl">Team Power</span>
+      <span class="val" id="team-stat-power">&mdash;</span>
+    </div>
+  </div>
+  <p class="count-line" id="team-count"></p>
+  <div class="table-shell">
+    <table>
+      <thead><tr id="team-head"></tr></thead>
+      <tbody id="team-body"></tbody>
     </table>
   </div>
 </main>
@@ -2524,23 +2663,244 @@
 
   renderList();
 
+  /* ---------- team builder view ---------- */
+  // One entry per person: of all yearly variations, keep the highest OVR.
+  var TEAM_POOL = (function () {
+    var best = {};
+    PLAYERS.forEach(function (p) {
+      if (!best[p.name] || p.ovr > best[p.name].ovr) best[p.name] = p;
+    });
+    return Object.keys(best).map(function (n) { return best[n]; });
+  })();
+
+  var teamPicks = [];
+  var suggestIdx = -1;
+
+  var TEAM_COLUMNS = [
+    { key: "ovr",  label: "OVR",  numeric: true },
+    { key: "tier", label: "Tier", numeric: false, sortFn: function (p) { return TIER_ORDER.indexOf(p.tier); } },
+    { key: "name", label: "Name", numeric: false },
+    { key: "year", label: "Year", numeric: true },
+    { key: "clan", label: "Clan", numeric: false }
+  ];
+  var teamSortKey = "ovr";
+  var teamSortDir = -1;
+
+  var tEls = {
+    search: document.getElementById("team-search"),
+    suggest: document.getElementById("team-suggest"),
+    add: document.getElementById("team-add"),
+    clear: document.getElementById("team-clear"),
+    head: document.getElementById("team-head"),
+    body: document.getElementById("team-body"),
+    count: document.getElementById("team-count"),
+    summary: document.getElementById("team-summary"),
+    statSize: document.getElementById("team-stat-size"),
+    statPower: document.getElementById("team-stat-power")
+  };
+
+  function teamHas(name) {
+    return teamPicks.some(function (p) { return p.name === name; });
+  }
+
+  function teamMatches() {
+    var q = tEls.search.value.trim().toLowerCase();
+    if (!q) return [];
+    var starts = [], contains = [];
+    TEAM_POOL.forEach(function (p) {
+      if (teamHas(p.name)) return;
+      var at = p.name.toLowerCase().indexOf(q);
+      if (at === 0) starts.push(p);
+      else if (at > 0) contains.push(p);
+    });
+    var byOvr = function (a, b) { return b.ovr - a.ovr; };
+    starts.sort(byOvr);
+    contains.sort(byOvr);
+    return starts.concat(contains).slice(0, 8);
+  }
+
+  function closeSuggest() {
+    tEls.suggest.hidden = true;
+    tEls.search.setAttribute("aria-expanded", "false");
+    suggestIdx = -1;
+  }
+
+  function renderSuggest() {
+    if (!tEls.search.value.trim()) { closeSuggest(); return; }
+    var matches = teamMatches();
+    if (suggestIdx >= matches.length) suggestIdx = matches.length - 1;
+    var html = "";
+    if (!matches.length) {
+      html = '<div class="s-none">No available players match</div>';
+    } else {
+      matches.forEach(function (p, i) {
+        var color = TIER_COLOR[p.tier.charAt(0)] || TIER_COLOR.D;
+        html += '<button type="button"' + (i === suggestIdx ? ' class="hi"' : "") +
+          ' data-name="' + esc(p.name) + '">';
+        html += '<span class="tier-pill" style="color:' + color + '">' + esc(p.tier) + "</span>";
+        html += '<span class="s-name">' + esc(p.name) + "</span>";
+        var meta = [];
+        if (p.year) meta.push(p.year);
+        if (p.clan) meta.push(p.clan);
+        html += '<span class="s-meta">' + esc(meta.join(" · ")) + "</span>";
+        html += '<span class="s-ovr" style="color:' + color + '">' + p.ovr + "</span>";
+        html += "</button>";
+      });
+    }
+    tEls.suggest.innerHTML = html;
+    tEls.suggest.hidden = false;
+    tEls.search.setAttribute("aria-expanded", "true");
+  }
+
+  function renderTeamHead() {
+    var html = '<th class="rank"></th>';
+    TEAM_COLUMNS.forEach(function (col) {
+      var isSorted = teamSortKey === col.key;
+      html += '<th class="h-' + col.key + " " + (col.numeric ? "num " : "") + (isSorted ? "sorted" : "") + '" data-key="' + col.key + '">';
+      html += '<button type="button">' + col.label;
+      if (isSorted) html += '<span class="arrow">' + (teamSortDir === 1 ? "&uarr;" : "&darr;") + "</span>";
+      html += "</button></th>";
+    });
+    html += "<th></th>";
+    tEls.head.innerHTML = html;
+    var ths = tEls.head.querySelectorAll("th[data-key] button");
+    for (var i = 0; i < ths.length; i++) {
+      ths[i].addEventListener("click", function () {
+        var key = this.parentElement.getAttribute("data-key");
+        if (teamSortKey === key) teamSortDir = -teamSortDir;
+        else { teamSortKey = key; teamSortDir = key === "name" || key === "clan" ? 1 : -1; }
+        renderTeam();
+      });
+    }
+  }
+
+  function sortTeamRows(rows) {
+    var col = TEAM_COLUMNS.filter(function (c) { return c.key === teamSortKey; })[0];
+    var getVal = col.sortFn || function (p) { return p[teamSortKey]; };
+    return rows.slice().sort(function (a, b) {
+      var av = getVal(a), bv = getVal(b);
+      if (typeof av === "string") { av = av.toLowerCase(); bv = bv.toLowerCase(); }
+      if (av < bv) return -1 * teamSortDir;
+      if (av > bv) return 1 * teamSortDir;
+      return b.ovr - a.ovr;
+    });
+  }
+
+  function renderTeam() {
+    renderTeamHead();
+    if (!teamPicks.length) {
+      tEls.body.innerHTML = '<tr><td colspan="7"><div class="empty-state">Search a player above to start your team</div></td></tr>';
+      tEls.count.innerHTML = "your team is <b>empty</b>";
+      tEls.summary.hidden = true;
+      return;
+    }
+    var rows = sortTeamRows(teamPicks);
+    var html = "", sum = 0;
+    rows.forEach(function (p, i) {
+      sum += p.ovr;
+      var color = TIER_COLOR[p.tier.charAt(0)] || TIER_COLOR.D;
+      html += "<tr>";
+      html += '<td class="rank">' + (i + 1) + "</td>";
+      html += '<td class="ovr" style="color:' + color + '">' + p.ovr + "</td>";
+      html += '<td class="tier"><span class="tier-pill" style="color:' + color + '">' + esc(p.tier) + "</span></td>";
+      html += '<td class="name">' + esc(p.name);
+      if (p.cheater) html += '<span class="cheat-chip">CHEATER</span>';
+      html += "</td>";
+      html += '<td class="year">' + (p.year || "&mdash;") + "</td>";
+      html += '<td class="clan' + (p.clan ? "" : " empty") + '">' + (p.clan ? esc(p.clan) : "&mdash;") + "</td>";
+      html += '<td><button type="button" class="btn-remove" data-name="' + esc(p.name) + '" aria-label="Remove ' + esc(p.name) + '">&times;</button></td>';
+      html += "</tr>";
+    });
+    tEls.body.innerHTML = html;
+    var avg = Math.round(sum / rows.length);
+    tEls.count.innerHTML = "<b>" + rows.length + "</b> player" + (rows.length === 1 ? "" : "s") +
+      " &middot; team power <b>" + avg + "</b>";
+    tEls.summary.hidden = false;
+    tEls.statSize.textContent = rows.length;
+    tEls.statPower.textContent = avg;
+  }
+
+  function addTeamPlayer(p) {
+    if (!p || teamHas(p.name)) return;
+    teamPicks.push(p);
+    tEls.search.value = "";
+    closeSuggest();
+    renderTeam();
+    tEls.search.focus();
+  }
+
+  tEls.search.addEventListener("input", function () {
+    suggestIdx = -1;
+    renderSuggest();
+  });
+  tEls.search.addEventListener("focus", renderSuggest);
+  tEls.search.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") { closeSuggest(); return; }
+    var matches = teamMatches();
+    if (e.key === "ArrowDown" && matches.length) {
+      e.preventDefault();
+      suggestIdx = (suggestIdx + 1) % matches.length;
+      renderSuggest();
+    } else if (e.key === "ArrowUp" && matches.length) {
+      e.preventDefault();
+      suggestIdx = (suggestIdx <= 0 ? matches.length : suggestIdx) - 1;
+      renderSuggest();
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      addTeamPlayer(suggestIdx >= 0 ? matches[suggestIdx] : matches[0]);
+    }
+  });
+  tEls.add.addEventListener("click", function () {
+    var matches = teamMatches();
+    if (matches.length) addTeamPlayer(suggestIdx >= 0 ? matches[suggestIdx] : matches[0]);
+    else { tEls.search.focus(); renderSuggest(); }
+  });
+  tEls.suggest.addEventListener("click", function (e) {
+    var btn = e.target.closest("button[data-name]");
+    if (!btn) return;
+    var name = btn.getAttribute("data-name");
+    addTeamPlayer(TEAM_POOL.filter(function (p) { return p.name === name; })[0]);
+  });
+  tEls.body.addEventListener("click", function (e) {
+    var btn = e.target.closest(".btn-remove");
+    if (!btn) return;
+    var name = btn.getAttribute("data-name");
+    teamPicks = teamPicks.filter(function (p) { return p.name !== name; });
+    renderTeam();
+  });
+  tEls.clear.addEventListener("click", function () {
+    teamPicks = [];
+    tEls.search.value = "";
+    closeSuggest();
+    renderTeam();
+  });
+  document.addEventListener("click", function (e) {
+    if (tEls.suggest.hidden) return;
+    if (tEls.search.contains(e.target) || tEls.suggest.contains(e.target)) return;
+    closeSuggest();
+  });
+
+  renderTeam();
+
   /* ---------- topbar tabs ---------- */
-  var tabDraft = document.getElementById("tab-draft");
-  var tabList = document.getElementById("tab-list");
-  var viewDraft = document.getElementById("view-draft");
-  var viewList = document.getElementById("view-list");
-  function setView(showList) {
-    viewList.classList.toggle("view-hidden", !showList);
-    viewDraft.classList.toggle("view-hidden", showList);
-    tabList.classList.toggle("on", showList);
-    tabDraft.classList.toggle("on", !showList);
-    tabList.setAttribute("aria-pressed", String(showList));
-    tabDraft.setAttribute("aria-pressed", String(!showList));
-    listViewOn = showList;
+  var TABS = {
+    draft: { tab: document.getElementById("tab-draft"), view: document.getElementById("view-draft") },
+    list:  { tab: document.getElementById("tab-list"),  view: document.getElementById("view-list") },
+    team:  { tab: document.getElementById("tab-team"),  view: document.getElementById("view-team") }
+  };
+  function setView(name) {
+    Object.keys(TABS).forEach(function (key) {
+      var on = key === name;
+      TABS[key].view.classList.toggle("view-hidden", !on);
+      TABS[key].tab.classList.toggle("on", on);
+      TABS[key].tab.setAttribute("aria-pressed", String(on));
+    });
+    listViewOn = name !== "draft";
     renderGauntletGate();
   }
-  tabDraft.addEventListener("click", function () { setView(false); });
-  tabList.addEventListener("click", function () { setView(true); });
+  Object.keys(TABS).forEach(function (key) {
+    TABS[key].tab.addEventListener("click", function () { setView(key); });
+  });
 
   /* ---------- settings ---------- */
   var gearBtn = document.getElementById("btn-settings");
