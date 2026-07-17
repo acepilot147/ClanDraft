@@ -8,7 +8,7 @@ const fs = require("fs");
 const path = require("path");
 
 const ROOT = __dirname;
-const CSV_PATH = path.join(ROOT, "..", "CombinedLists.csv");
+const CSV_PATH = path.join(ROOT, "CombinedLists.csv");
 const INDEX_PATH = path.join(ROOT, "index.html");
 const LIST_PATH = path.join(ROOT, "list.html");
 

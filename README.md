@@ -9,8 +9,8 @@ Both pages embed their data inline, so no build step or server-side code is requ
 
 ## Data generation
 
-`CombinedLists.csv` lives one directory above the repo (`../CombinedLists.csv`), keeping the
-source sheet out of the deployed site. After editing it, run `node generate.js` to regenerate
+`CombinedLists.csv` lives in the repo root and is deployed with the site, so other tools can
+fetch the source sheet directly. After editing it, run `node generate.js` to regenerate
 the embedded `PLAYERS`/`ROWS` arrays in both pages, then commit the updated HTML. The CSV's
 `Leader` column feeds the leadership classes (Elite/Experienced/Good/No Mic/Negative) used by
 the Gauntlet; players without a Leader value lead as Raw +0.
