@@ -2681,12 +2681,28 @@
 
   /* ---------- team builder view ---------- */
   // One entry per person: of all yearly variations, keep the highest OVR.
+  // Clan comes from the matching ROWS entry: PLAYERS carries a prior year's
+  // clan forward for the Gauntlet's home-field logic, but here a player
+  // should only show the clan they actually had that year.
   var TEAM_POOL = (function () {
+    var rowClan = {};
+    ROWS.forEach(function (r) {
+      var k = r.name + "|" + r.year + "|" + r.ovr;
+      if (!(k in rowClan)) rowClan[k] = r.clan;
+    });
     var best = {};
     PLAYERS.forEach(function (p) {
       if (!best[p.name] || p.ovr > best[p.name].ovr) best[p.name] = p;
     });
-    return Object.keys(best).map(function (n) { return best[n]; });
+    return Object.keys(best).map(function (n) {
+      var p = best[n];
+      var actual = rowClan[p.name + "|" + p.year + "|" + p.ovr];
+      if (actual === undefined || actual === p.clan) return p;
+      var copy = {};
+      for (var key in p) copy[key] = p[key];
+      copy.clan = actual;
+      return copy;
+    });
   })();
 
   var teamPicks = [];
