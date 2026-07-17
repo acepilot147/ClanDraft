@@ -1313,8 +1313,18 @@
       min-height: 0;
       overflow: hidden;
     }
-    .topbar { flex: none; padding: 12px 14px 8px; }
+    .topbar { flex: none; padding: 12px 14px 8px; gap: 8px; }
     .topbar .src { display: none; }
+    /* three tabs squeeze between brand and gear: shrink so labels stay one line */
+    .tabs { gap: 4px; }
+    .tab {
+      font-size: 8px;
+      letter-spacing: 0.7px;
+      padding: 6px 8px;
+      white-space: nowrap;
+    }
+    .tab.gear { font-size: 12px; padding: 5px 7px; }
+    .brand { font-size: 17px; letter-spacing: 1.2px; }
     .listview {
       flex: 1;
       min-height: 0;
@@ -1431,6 +1441,12 @@
   @media (max-width: 360px) {
     .slot .who .clan-chip { display: none; }
     .card .clan-chip { display: none; }
+  }
+  /* brand + three tabs + gear can't share one row this narrow:
+     keep brand and gear up top, give the tabs their own full row */
+  @media (max-width: 380px) {
+    .topbar { flex-wrap: wrap; row-gap: 8px; }
+    .tabs { order: 1; flex-basis: 100%; justify-content: center; }
   }
 </style>
 
