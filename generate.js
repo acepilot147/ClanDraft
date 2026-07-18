@@ -6,38 +6,12 @@
 
 const fs = require("fs");
 const path = require("path");
+const { parseCSV } = require("./csv");
 
 const ROOT = __dirname;
 const CSV_PATH = path.join(ROOT, "CombinedLists.csv");
 const INDEX_PATH = path.join(ROOT, "index.html");
 const LIST_PATH = path.join(ROOT, "list.html");
-
-function parseCSV(text) {
-  const rows = [];
-  let row = [];
-  let field = "";
-  let inQuotes = false;
-  for (let i = 0; i < text.length; i++) {
-    const c = text[i];
-    if (inQuotes) {
-      if (c === '"') {
-        if (text[i + 1] === '"') { field += '"'; i++; }
-        else inQuotes = false;
-      } else field += c;
-    } else if (c === '"') {
-      inQuotes = true;
-    } else if (c === ",") {
-      row.push(field); field = "";
-    } else if (c === "\n" || c === "\r") {
-      if (c === "\r" && text[i + 1] === "\n") i++;
-      row.push(field); field = "";
-      if (row.length > 1 || row[0] !== "") rows.push(row);
-      row = [];
-    } else field += c;
-  }
-  if (field !== "" || row.length) { row.push(field); rows.push(row); }
-  return rows;
-}
 
 // Tier letters are derived from OVR; the thresholds reproduce the
 // hand-assigned Letter column the CSV used to carry.
@@ -67,6 +41,7 @@ function loadRows() {
     clan: col(r, "Clan") || "",
     leader: (col(r, "Leader") || "").trim(),
     cheater: col(r, "Cheater") === "TRUE",
+    rcl: col(r, "RCL") === "TRUE",
     source: col(r, "Source") || "",
   }));
 }
@@ -82,6 +57,7 @@ function buildListPlayers(rows) {
       source: r.source,
     };
     if (r.cheater) row.cheater = true;
+    if (r.rcl) row.rcl = true;
     return row;
   });
 }
@@ -114,6 +90,7 @@ function buildIndexPlayers(rows) {
       const player = { name, ovr: r.ovr, tier: r.tier, clan, year: r.year };
       if (leadRow) player.leader = leadRow.leader;
       if (cheater) player.cheater = true;
+      if (r.rcl) player.rcl = true;
       players.push(player);
     }
   }
