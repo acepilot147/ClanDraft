@@ -58,6 +58,7 @@ function buildListPlayers(rows) {
     };
     if (r.cheater) row.cheater = true;
     if (r.rcl) row.rcl = true;
+    if (r.leader) row.leader = r.leader;
     return row;
   });
 }
