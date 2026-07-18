@@ -5,6 +5,13 @@ The **canonical** name is the form used in `CombinedLists.csv` (usually the hand
 carries rows). When importing a new source sheet, map its handle to the canonical name so a player's
 rows stay under one identity.
 
+This file is hand-curated and holds judgment calls - which handle wins, and which confusable names
+are deliberately kept apart. It is not the full list of handles a player has ever used: Roblox's own
+rename history for every name in `CombinedLists.csv` is fetched by `check-roblox-names.js` and stored
+in `RobloxNames.csv`. Use that file to *find* candidate aliases; record the decision here once you
+have confirmed one. A rename history is evidence, not proof of identity - accounts get sold, and two
+players can pass the same handle back and forth.
+
 Two recurring gotchas:
 - **Capital `I` for lowercase `l`** obfuscation is common in the sheets: e.g. `eviImatty`=evilmatty,
   `eviIsworn`=evilsworn, `dreaddfuI`=dreaddful, `corrporaI`=corporal, `PiIoteer`=Piloteer.
@@ -40,6 +47,11 @@ Two recurring gotchas:
 | dreaddfuI | dreaddful | |
 | no_logic | no_iogic | |
 | FeatherRedemption | FeatherRemeption | 2020 row was misspelled |
+| lorddicys | lordd90 | Khritus raid screenshot handle |
+| shaquillee | shaq966 | Khritus raid screenshot handle |
+| evis2026 | uhvisrayshn | Khritus raid screenshot handle |
+| khritus | Skuullzz | Khritus playing under an alt in his own raid screenshot |
+| c4spian | c_spian | Khritus raid screenshot handle |
 
 ## Do NOT merge (distinct players with confusable names)
 
