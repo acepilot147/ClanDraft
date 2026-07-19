@@ -97,6 +97,8 @@ Where a merge left two rows in the same year, the higher OVR was kept.
 | wantedxv | w4nxted | same Roblox account (id 82635853) |
 | sparhelpers | s2anu | same Roblox account (id 1235813674) |
 | ju_nll | yurk_xe | same Roblox account (id 78706775) |
+| Da_mas | SnowAtor | raid handle; confirmed by hand (Da_mas account itself came back notfound in the Roblox lookup) |
+| pdualy | dualyy | raid handle; rename history carries DUALYYY, duaIy2, omwdualy |
 
 ## Do NOT merge (distinct players with confusable names)
 
@@ -104,3 +106,5 @@ Where a merge left two rows in the same year, the higher OVR was kept.
 - `xbsightsss` ≠ `XBSIGHTS` - two different players; keep separate.
 - `EnterScreenName` is a real player, not a placeholder - keep as-is.
 - `xeffns` = `prayalott` - excluded from the SOL Summer 2024 import because prayalott self-submitted their own score (avoid self-bias / double-count).
+- `8kr6` ≠ `s9ense` - the `8kr6NoAuraNoob` in s9ense's rename history is a mock-name, not an alt.
+- `G2_RCM` vs `G2_RCMI` (in n3g_ative/reswrn's rename history) - unresolved, likely different people; kept separate.
