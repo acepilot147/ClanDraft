@@ -31,6 +31,7 @@ const { readCSV, formatCSV } = require("./csv");
 const ROOT = __dirname;
 const COMBINED = path.join(ROOT, "CombinedLists.csv");
 const RAID = path.join(ROOT, "RaidStats.csv");
+const GAMES = path.join(ROOT, "Games.csv");
 const REPORT = path.join(ROOT, "NudgeReport.csv");
 
 // ---- tuning knobs -----------------------------------------------------------
@@ -40,6 +41,12 @@ const W_HEALS = 0.15;
 const WINSOR_Z = 2.5; // cap one popped-off (or farmed) game
 const RHO = 0.6; // how predictive a rating is of a single game's z
 const TEAM_BETA = 0.25; // expected-z shift per point of team-strength asymmetry
+// Per-map absolute baseline: within-game z is purely relative to the lobby,
+// so a share of the observed score comes from comparing raw stats to the
+// map's pooled profile across games (maps play consistently). Only active
+// once a map has enough symmetric games to have a stable profile.
+const W_MAP = 0.3; // blend weight of the map baseline vs the within-game z
+const MIN_MAP_GAMES = 3;
 const SIGMA_GAME = 6.0; // single-game noise, in OVR points (big = small nudges)
 const LOBBY_SD_FLOOR = 3.0; // don't let a flat lobby explode the z->OVR scale
 const MAX_MOVE_PER_GAME = 2.5; // OVR points; belt-and-suspenders outlier cap
@@ -139,6 +146,63 @@ function loadGames() {
   );
 }
 
+function loadGameMaps() {
+  const rows = readCSV(fs, GAMES);
+  const col = Object.fromEntries(rows[0].map((h, i) => [h, i]));
+  const maps = new Map();
+  for (let i = 1; i < rows.length; i++) {
+    if (rows[i][col.GameId] && rows[i][col.Map]) maps.set(rows[i][col.GameId], rows[i][col.Map]);
+  }
+  return maps;
+}
+
+// Pooled per-map stat profile from symmetric (RED/BLUE) games: the absolute
+// yardstick that within-game z can't provide. Returns a scorer built on the
+// same composite as observedZ (kills, dmg-beyond-kills, heals), standardized
+// against the map's pooled distribution.
+function buildMapBaselines(games, gameMaps) {
+  const pools = new Map(); // map name -> { rows, gameCount }
+  for (const [id, players] of games) {
+    const map = gameMaps.get(id);
+    if (!map) continue;
+    if (players.some((p) => p.team !== "RED" && p.team !== "BLUE")) continue;
+    if (!pools.has(map)) pools.set(map, { rows: [], gameCount: 0 });
+    const pool = pools.get(map);
+    pool.rows.push(...players);
+    pool.gameCount++;
+  }
+  const scorers = new Map();
+  for (const [map, pool] of pools) {
+    if (pool.gameCount < MIN_MAP_GAMES) continue;
+    const ks = pool.rows.map((p) => p.kills);
+    const ds = pool.rows.map((p) => p.dmg);
+    const hs = pool.rows.map((p) => p.heals);
+    const mk = mean(ks);
+    const md = mean(ds);
+    let num = 0;
+    let den = 0;
+    for (let i = 0; i < ks.length; i++) {
+      num += (ks[i] - mk) * (ds[i] - md);
+      den += (ks[i] - mk) * (ks[i] - mk);
+    }
+    const slope = den > 0 ? num / den : 0;
+    const resid = ds.map((d, i) => d - (md + slope * (ks[i] - mk)));
+    const sk = sd(ks) || 1;
+    const sr = sd(resid) || 1;
+    const mh = mean(hs);
+    const sh = sd(hs) || 1;
+    const rawOf = (p) =>
+      W_KILLS * ((p.kills - mk) / sk) +
+      W_DMG_RESID * ((p.dmg - (md + slope * (p.kills - mk))) / sr) +
+      W_HEALS * ((p.heals - mh) / sh);
+    const raws = pool.rows.map(rawOf);
+    const mRaw = mean(raws);
+    const sRaw = sd(raws) || 1;
+    scorers.set(map, (p) => (rawOf(p) - mRaw) / sRaw);
+  }
+  return scorers;
+}
+
 // Observed composite z for each player in one game. All standardization is
 // within-game, so map/mode/lobby pace never leak across games.
 function observedZ(players) {
@@ -169,6 +233,8 @@ function main() {
   const apply = process.argv.includes("--apply");
   const { priors, rows: combinedRows, col } = loadPriors();
   const games = loadGames();
+  const gameMaps = loadGameMaps();
+  const mapScorers = buildMapBaselines(games, gameMaps);
 
   // Default prior for players with no list history: median of the priors of
   // everyone who shows up in the raid games (deterministic, roster-anchored).
@@ -208,8 +274,16 @@ function main() {
       ? teams.map((t) => players.filter((p) => p.team === t))
       : [players];
 
+    // blend in the map's absolute baseline for symmetric games on maps with
+    // an established profile (relative-to-lobby stays the dominant signal)
+    const mapScore = !grouped ? mapScorers.get(gameMaps.get(gameId)) : null;
+
     for (const group of groups) {
-      const zObs = observedZ(group);
+      let zObs = observedZ(group);
+      if (mapScore)
+        zObs = zObs.map((z, i) =>
+          clamp((1 - W_MAP) * z + W_MAP * mapScore(group[i]), -WINSOR_Z, WINSOR_Z)
+        );
 
       // group expectation from CURRENT posterior means (sequential filter)
       const ratings = group.map((p) => getState(p.name).mean);
