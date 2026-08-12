@@ -103,7 +103,7 @@ Where a merge left two rows in the same year, the higher OVR was kept.
 | pdualy | dualyy | raid handle; rename history carries DUALYYY, duaIy2, omwdualy |
 | qirvv | lightpunisher64 | current name (renamed after the July 2026 fetch) |
 | w_plop | johnsummitfan9 | current name; first CombinedLists appearance is the M8 raid |
-| evanvictorjames | lidewully | current name again (was evyjei in July 2026; lidewully also in past names) |
+| evanvictorjames | lidewully, evyjei | lidewully is the current name again (was evyjei in July 2026); both in past names too |
 | zeustage | zeustide | current name |
 | moooshiimoooshii | eviImooshippuzthe4 | current name - capital-I obfuscation, reads "evil..." on the scoreboard |
 | Tenshi | tenshl, YukiYuna_IsAHero, t_enshimaster | one account (id 61000567, current: YukiYuna_IsAHero); the literal name "Tenshi" on Roblox (id 192259) is an UNRELATED account - the RobloxNames.csv "Tenshi" row points at the wrong person |
