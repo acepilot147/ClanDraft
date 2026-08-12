@@ -9,6 +9,24 @@ Turns a scoreboard screenshot into RaidStats.csv rows and nudged OVRs.
 Data files: `RaidStats.csv` (per-game stats), `Games.csv` (provenance),
 `CombinedLists.csv` (ratings), `ALIASES.md` (identity decisions).
 
+Domain facts (from a_cemaster):
+- Game modes are `HP` (hardpoint) and `RAID`. **CTF is not a game mode** —
+  never label a game CTF. The caps column on HP boards counts hardpoint
+  captures.
+- Docks, Ordana, and Warehouse are **fairzone** maps (the 12v12 meta maps;
+  assault guns drive high damage there).
+- **Uneven team sizes on an end screen usually mean players left before the
+  capture**, not that the game was designed asymmetric. Only drop a row for
+  a genuine partial game (late join in chat log, near-zero stats).
+- Symmetric pickup lobbies use RED/BLUE team labels in RaidStats.csv.
+  Named-faction labels (AST/INS, RAID/VAK, ASTARTES/XENOS) mark games where
+  the sides have structurally different power (e.g. Astartes vs Xenos) —
+  nudge.js scores those within-faction, so label teams accordingly.
+- CombinedLists.csv keeps **one row per player per year**. The nudge updates
+  a player's existing 2026 row in place (banking the pre-nudge value in the
+  NudgeBase column) and only adds a row when the player has none that year.
+  Never hand-add a second same-year row.
+
 ## 1. Transcribe and checksum
 
 Read the screenshot into two team tables: Team (RED/BLUE), Handle, Kills,

@@ -87,14 +87,26 @@ function loadPriors() {
   const rows = readCSV(fs, COMBINED);
   const header = rows[0];
   const col = Object.fromEntries(header.map((h, i) => [h, i]));
-  // newest row per player, skipping raid-derived rows (double-count guard)
+  // newest row per player, skipping raid-derived rows (double-count guard).
+  // A "Raid nudge" row that absorbed another source's row carries that row's
+  // original value in NudgeBase - that value is the recoverable prior; nudge
+  // rows without a base (players first rated by the nudge) carry none.
   const best = new Map();
   for (let i = 1; i < rows.length; i++) {
     const r = rows[i];
     const name = r[col.LegacyName];
-    if (!name || EXCLUDED_SOURCES.has(r[col.Source])) continue;
+    if (!name) continue;
+    let ovr;
+    if (r[col.Source] === NUDGE_SOURCE) {
+      const m = /^(\d+(?:\.\d+)?)/.exec(r[col.NudgeBase] || "");
+      if (!m) continue;
+      ovr = parseFloat(m[1]);
+    } else if (EXCLUDED_SOURCES.has(r[col.Source])) {
+      continue;
+    } else {
+      ovr = parseFloat(r[col.OVR]);
+    }
     const year = parseInt(r[col.Year], 10) || 0;
-    const ovr = parseFloat(r[col.OVR]);
     if (!isFinite(ovr)) continue;
     const prev = best.get(name);
     if (!prev || year > prev.year) best.set(name, { ovr, year, row: r });
@@ -272,13 +284,23 @@ function main() {
 
   if (!apply) return;
 
-  // ---- upsert Year=2026 / Source="Raid nudge" rows into CombinedLists.csv ----
+  // ---- upsert into CombinedLists.csv: exactly ONE row per player-year ----
+  // The nudge takes over the player's existing 2026 row rather than adding a
+  // duplicate. When it absorbs a row from another source, that row's original
+  // value is banked once in the NudgeBase column, which loadPriors() reads
+  // back as the pre-nudge prior - so repeated applies stay idempotent.
   const header = combinedRows[0];
-  const existingNudge = new Map(); // name -> row index
+  if (!header.includes("NudgeBase")) header.push("NudgeBase");
+  const iBase = header.indexOf("NudgeBase");
+  for (let i = 1; i < combinedRows.length; i++)
+    while (combinedRows[i].length < header.length) combinedRows[i].push("");
+
+  const byName2026 = new Map(); // name -> row indices with Year=2026
   for (let i = 1; i < combinedRows.length; i++) {
     const r = combinedRows[i];
-    if (r[col.Source] === NUDGE_SOURCE && r[col.Year] === NUDGE_YEAR)
-      existingNudge.set(r[col.LegacyName], i);
+    if (r[col.Year] !== NUDGE_YEAR) continue;
+    if (!byName2026.has(r[col.LegacyName])) byName2026.set(r[col.LegacyName], []);
+    byName2026.get(r[col.LegacyName]).push(i);
   }
   // newest row of any source, to copy Clan/Leader/Class/RCL metadata from
   const newestAny = new Map();
@@ -289,31 +311,53 @@ function main() {
     if (!prev || y > prev.y) newestAny.set(r[col.LegacyName], { y, r });
   }
 
+  const META_COLS = ["Clan", "Leader", "Class Player", "Cheater", "RCL"];
+  const drop = new Set();
   let updated = 0;
   let added = 0;
+  let absorbed = 0;
   for (const r of out) {
-    const meta = newestAny.get(r.name);
-    if (existingNudge.has(r.name)) {
-      combinedRows[existingNudge.get(r.name)][col.OVR] = String(r.post);
+    const idxs = byName2026.get(r.name) || [];
+    // prefer the existing nudge row; otherwise take over the highest-OVR
+    // row of the year (matches the historical dedup rule in ALIASES.md)
+    let keep = idxs.find((i) => combinedRows[i][col.Source] === NUDGE_SOURCE);
+    if (keep == null && idxs.length)
+      keep = [...idxs].sort((a, b) => +combinedRows[b][col.OVR] - +combinedRows[a][col.OVR])[0];
+
+    if (keep != null) {
+      const row = combinedRows[keep];
+      for (const i of idxs) {
+        if (i === keep) continue;
+        const o = combinedRows[i];
+        if (!row[iBase] && o[col.Source] !== NUDGE_SOURCE)
+          row[iBase] = `${o[col.OVR]} (${o[col.Source] || "unsourced"})`;
+        for (const f of META_COLS) if (!row[col[f]] && o[col[f]]) row[col[f]] = o[col[f]];
+        drop.add(i);
+        absorbed++;
+      }
+      if (row[col.Source] !== NUDGE_SOURCE) {
+        if (!row[iBase]) row[iBase] = `${row[col.OVR]} (${row[col.Source] || "unsourced"})`;
+        row[col.Source] = NUDGE_SOURCE;
+      }
+      row[col.OVR] = String(r.post);
       updated++;
     } else {
+      const meta = newestAny.get(r.name);
       const row = header.map(() => "");
       row[col.LegacyName] = r.name;
       row[col.OVR] = String(r.post);
       row[col.Year] = NUDGE_YEAR;
       row[col.Source] = NUDGE_SOURCE;
-      if (meta) {
-        row[col.Clan] = meta.r[col.Clan];
-        row[col.Leader] = meta.r[col.Leader];
-        row[col["Class Player"]] = meta.r[col["Class Player"]];
-        row[col.RCL] = meta.r[col.RCL];
-      }
+      if (meta) for (const f of META_COLS) row[col[f]] = meta.r[col[f]];
       combinedRows.push(row);
       added++;
     }
   }
-  fs.writeFileSync(COMBINED, formatCSV(combinedRows));
-  console.log(`\nApplied: ${updated} nudge rows updated, ${added} added. Now run: node generate.js`);
+  const finalRows = combinedRows.filter((_, i) => i === 0 || !drop.has(i));
+  fs.writeFileSync(COMBINED, formatCSV(finalRows));
+  console.log(
+    `\nApplied: ${updated} year-rows updated (${absorbed} duplicate rows absorbed), ${added} added. Now run: node generate.js`
+  );
 }
 
 main();
