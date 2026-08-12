@@ -10,9 +10,10 @@ Data files: `RaidStats.csv` (per-game stats), `Games.csv` (provenance),
 `CombinedLists.csv` (ratings), `ALIASES.md` (identity decisions).
 
 Domain facts (from a_cemaster):
-- Game modes are `HP` (hardpoint) and `RAID`. **CTF is not a game mode** —
-  never label a game CTF. The caps column on HP boards counts hardpoint
-  captures.
+- `HP` (hardpoint) is a **game type**; **CTF is not one** — never label a
+  game CTF. The caps column on HP boards counts hardpoint captures.
+  Raids/defenses are **events, not game types** — record them in Games.csv's
+  Event column; leave RaidStats Mode blank when the game type is unknown.
 - Docks, Ordana, and Warehouse are **fairzone** maps (the 12v12 meta maps;
   assault guns drive high damage there).
 - **Uneven team sizes on an end screen usually mean players left before the
