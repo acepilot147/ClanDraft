@@ -25,7 +25,7 @@ Two recurring gotchas:
 | Br_ce | eb9_bryce | |
 | sybr | sybriwnl | (`syhr` was an interim wrong guess) |
 | Ran502 | RanMagic | NOT Rune502, NOT Commando_Lemon |
-| JAWS | JawsAtor | |
+| JAWS | JawsAtor | ALT ACCOUNT (id 32476656, past: hottjaws1993, C9_Jaws, GT_Jaws) per a_cemaster; main is id 41671 (past: hottjaws1992) |
 | kiritobriz | briizc | |
 | Commando_Lemon | s2n_lemon, UndefinedLemon | quit ~mid-2019; NOT Commando_Jesus |
 | Memeserii | isoundlikemongraal | |
