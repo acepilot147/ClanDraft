@@ -7,6 +7,9 @@
 // names added to CombinedLists.csv since the last run.
 //
 //   node check-roblox-names.js               # fetch what's missing, print flags
+//   node check-roblox-names.js --names a,b,c # (re-)fetch just these names, appending
+//                                            # to the cache - names need not be in
+//                                            # CombinedLists.csv (raid-ingest identity checks)
 //   node check-roblox-names.js --refresh     # re-fetch every name
 //   node check-roblox-names.js --max-age 90  # re-fetch entries older than 90 days
 //   node check-roblox-names.js --offline     # print flags from the cache, no API calls
@@ -76,6 +79,7 @@ function parseArgs(argv) {
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === "--refresh") o.refresh = true;
+    else if (a === "--names") o.names = argv[++i].split(",").map((s) => s.trim()).filter(Boolean);
     else if (a === "--offline") o.offline = true;
     else if (a === "--max-age") o.maxAgeDays = Number(argv[++i]);
     else if (a === "--delay") o.delayMs = Number(argv[++i]);
@@ -293,10 +297,12 @@ function collisions(entries, legacyNames) {
 }
 
 async function main() {
-  const legacyNames = loadLegacyNames();
+  // --names bypasses CombinedLists.csv and always re-fetches: it exists to
+  // verify fresh identity claims, so a cached answer is exactly what NOT to trust.
+  const legacyNames = opts.names || loadLegacyNames();
   const cache = loadCache();
 
-  const stale = legacyNames.filter((n) => !cache.has(key(n)) || isStale(cache.get(key(n))));
+  const stale = legacyNames.filter((n) => opts.names || !cache.has(key(n)) || isStale(cache.get(key(n))));
   const todo = stale.slice(0, opts.limit);
   console.log(
     `${legacyNames.length} unique usernames in CombinedLists.csv: ` +
