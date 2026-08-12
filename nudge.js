@@ -113,6 +113,7 @@ function loadGames() {
     if (!id) continue;
     if (!games.has(id)) games.set(id, []);
     games.get(id).push({
+      mode: r[col.Mode],
       team: r[col.Team],
       name: r[col.Canonical] || r[col.Handle],
       kills: parseFloat(r[col.Kills]) || 0,
@@ -184,36 +185,48 @@ function main() {
   };
 
   for (const [gameId, players] of games) {
-    const zObs = observedZ(players);
+    // Asymmetric-faction games (RAID: e.g. 12 Astartes vs 8 Xenos) have
+    // structurally different stat scales per side, so each faction is scored
+    // on its own curve with its own expectation baseline and no cross-team
+    // asymmetry term. Symmetric games share one lobby-wide curve.
+    const teams = [...new Set(players.map((p) => p.team))];
+    const grouped = players[0].mode === "RAID" && teams.length > 1;
+    const groups = grouped
+      ? teams.map((t) => players.filter((p) => p.team === t))
+      : [players];
 
-    // lobby expectation from CURRENT posterior means (sequential filter)
-    const ratings = players.map((p) => getState(p.name).mean);
-    const lobbyMean = mean(ratings);
-    const lobbySd = Math.max(sd(ratings), LOBBY_SD_FLOOR);
-    const teamMean = {};
-    for (const t of new Set(players.map((p) => p.team))) {
-      teamMean[t] = mean(players.filter((p) => p.team === t).map((p) => getState(p.name).mean));
-    }
+    for (const group of groups) {
+      const zObs = observedZ(group);
 
-    players.forEach((p, i) => {
-      const s = getState(p.name);
-      const opp = Object.keys(teamMean).find((t) => t !== p.team);
-      const asym = opp != null ? (teamMean[p.team] - teamMean[opp]) / lobbySd : 0;
-      const zExp = (RHO * (s.mean - lobbyMean)) / lobbySd + TEAM_BETA * asym;
-      const surprise = zObs[i] - zExp; // in z units
-      const K = s.var / (s.var + SIGMA_GAME * SIGMA_GAME);
-      let move = clamp(K * surprise * lobbySd, -MAX_MOVE_PER_GAME, MAX_MOVE_PER_GAME);
-      if (s.priorOvr != null && s.priorOvr >= TIER_LOCK) {
-        move = 0; // frozen inside the all-time-great tier
-      } else {
-        if (NO_DOWN.has(p.name) && move < 0) move = 0;
-        move = Math.min(move, TIER_LOCK - 1 - s.mean); // ceiling: never nudged into 97+
+      // group expectation from CURRENT posterior means (sequential filter)
+      const ratings = group.map((p) => getState(p.name).mean);
+      const groupMean = mean(ratings);
+      const groupSd = Math.max(sd(ratings), LOBBY_SD_FLOOR);
+      const teamMean = {};
+      for (const t of new Set(group.map((p) => p.team))) {
+        teamMean[t] = mean(group.filter((p) => p.team === t).map((p) => getState(p.name).mean));
       }
-      s.mean += move;
-      s.var *= 1 - K;
-      s.games += 1;
-      s.sumSurprise += surprise;
-    });
+
+      group.forEach((p, i) => {
+        const s = getState(p.name);
+        const opp = Object.keys(teamMean).find((t) => t !== p.team);
+        const asym = opp != null ? (teamMean[p.team] - teamMean[opp]) / groupSd : 0;
+        const zExp = (RHO * (s.mean - groupMean)) / groupSd + TEAM_BETA * asym;
+        const surprise = zObs[i] - zExp; // in z units
+        const K = s.var / (s.var + SIGMA_GAME * SIGMA_GAME);
+        let move = clamp(K * surprise * groupSd, -MAX_MOVE_PER_GAME, MAX_MOVE_PER_GAME);
+        if (s.priorOvr != null && s.priorOvr >= TIER_LOCK) {
+          move = 0; // frozen inside the all-time-great tier
+        } else {
+          if (NO_DOWN.has(p.name) && move < 0) move = 0;
+          move = Math.min(move, TIER_LOCK - 1 - s.mean); // ceiling: never nudged into 97+
+        }
+        s.mean += move;
+        s.var *= 1 - K;
+        s.games += 1;
+        s.sumSurprise += surprise;
+      });
+    }
   }
 
   // ---- report ----

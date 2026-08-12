@@ -111,6 +111,8 @@ Where a merge left two rows in the same year, the higher OVR was kept.
 | RICESREVENGE | ricexdx3 | current name; same account as the HowToEatRice merge above |
 | Craidd | GreetingsWarmaster | current name; history carries SenorCraidd, FaZeCRAIDD, Craidgod, craidxdx3 |
 | Flamedxx | notflamedd | current name; history carries fIamedxx (capital-I), opfIamed, SireFlamed, FL4MEED |
+| mxrced | mycallended | current name; history carries MERCSRETURN, 222MXRC, mercsanity |
+| yxng_wes | eviIwesly | current name (capital-I; scoreboards render "evilwesly"); history carries Yxng_Wes, wesIogic, WarehouseDocksOrdana |
 
 ## Do NOT merge (distinct players with confusable names)
 
@@ -120,3 +122,4 @@ Where a merge left two rows in the same year, the higher OVR was kept.
 - `xeffns` = `prayalott` - excluded from the SOL Summer 2024 import because prayalott self-submitted their own score (avoid self-bias / double-count).
 - `8kr6` ≠ `s9ense` - the `8kr6NoAuraNoob` in s9ense's rename history is a mock-name, not an alt.
 - `G2_RCM` vs `G2_RCMI` (in n3g_ative/reswrn's rename history) - unresolved, likely different people; kept separate.
+- `EvilWesly` (literal, id in RobloxNames "evilwesly" row) ≠ `eviIwesly` (capital-I, =yxng_wes) - the literal account has no clanning history; scoreboard "evilwesly" means the capital-I clanner.
