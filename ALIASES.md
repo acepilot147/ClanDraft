@@ -52,6 +52,8 @@ Two recurring gotchas:
 | evis2026 | uhvisrayshn | Khritus raid screenshot handle |
 | khritus | Skuullzz | Khritus playing under an alt in his own raid screenshot |
 | c4spian | c_spian | Khritus raid screenshot handle |
+| rinarcy | blackpunisher64 | ALT ACCOUNT (id 46045, past: CrumpetsRock); main is id 165312572 - per a_cemaster, M8 raid |
+| aspirrant | calebdownsrocks7 | ALT ACCOUNT (id 8701426, past: zgta); main id 936673945 has NO rename history, so this is a second account, not a rename - per a_cemaster, M8 raid |
 
 ## Confirmed same-player merges (via Roblox rename history)
 
@@ -99,6 +101,16 @@ Where a merge left two rows in the same year, the higher OVR was kept.
 | ju_nll | yurk_xe | same Roblox account (id 78706775) |
 | Da_mas | SnowAtor | raid handle; confirmed by hand (Da_mas account itself came back notfound in the Roblox lookup) |
 | pdualy | dualyy | raid handle; rename history carries DUALYYY, duaIy2, omwdualy |
+| qirvv | lightpunisher64 | current name (renamed after the July 2026 fetch) |
+| w_plop | johnsummitfan9 | current name; first CombinedLists appearance is the M8 raid |
+| evanvictorjames | lidewully | current name again (was evyjei in July 2026; lidewully also in past names) |
+| zeustage | zeustide | current name |
+| moooshiimoooshii | eviImooshippuzthe4 | current name - capital-I obfuscation, reads "evil..." on the scoreboard |
+| Tenshi | tenshl, YukiYuna_IsAHero, t_enshimaster | one account (id 61000567, current: YukiYuna_IsAHero); the literal name "Tenshi" on Roblox (id 192259) is an UNRELATED account - the RobloxNames.csv "Tenshi" row points at the wrong person |
+| Jesxaiah | Jexgraal | current name (74-name rename history; jesxaiah among them) |
+| RICESREVENGE | ricexdx3 | current name; same account as the HowToEatRice merge above |
+| Craidd | GreetingsWarmaster | current name; history carries SenorCraidd, FaZeCRAIDD, Craidgod, craidxdx3 |
+| Flamedxx | notflamedd | current name; history carries fIamedxx (capital-I), opfIamed, SireFlamed, FL4MEED |
 
 ## Do NOT merge (distinct players with confusable names)
 
