@@ -185,12 +185,13 @@ function main() {
   };
 
   for (const [gameId, players] of games) {
-    // Asymmetric-faction games (RAID: e.g. 12 Astartes vs 8 Xenos) have
+    // Asymmetric-faction games (e.g. 12 Astartes vs 8 Xenos) have
     // structurally different stat scales per side, so each faction is scored
     // on its own curve with its own expectation baseline and no cross-team
-    // asymmetry term. Symmetric games share one lobby-wide curve.
+    // asymmetry term. Symmetric pickup lobbies use RED/BLUE team labels and
+    // share one lobby-wide curve; named-faction labels signal asymmetry.
     const teams = [...new Set(players.map((p) => p.team))];
-    const grouped = players[0].mode === "RAID" && teams.length > 1;
+    const grouped = teams.length > 1 && teams.some((t) => t !== "RED" && t !== "BLUE");
     const groups = grouped
       ? teams.map((t) => players.filter((p) => p.team === t))
       : [players];
