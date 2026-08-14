@@ -58,7 +58,10 @@ const TIER_LOCK = 97;
 // Hand exceptions from a_cemaster: stats never reduce these players'
 // ratings (leadership value not visible in scoreboards). Boosts still apply.
 const NO_DOWN = new Set(["Avaitron", "aspirrant"]);
-// Prior sigma (OVR points) by staleness of the player's newest non-raid row.
+// Game years are recorded in Games.csv for provenance but deliberately NOT
+// modeled: a_cemaster's call (2026-08) - the 2024-2026 era gap is minor, so
+// all games count equally regardless of age. Prior sigma still reflects how
+// stale the player's newest list rating is.
 function priorSigma(year) {
   if (year == null) return 7.0; // no prior at all: data decides
   if (year >= 2025) return 3.0;
@@ -146,14 +149,19 @@ function loadGames() {
   );
 }
 
-function loadGameMaps() {
+function loadGameMeta() {
   const rows = readCSV(fs, GAMES);
   const col = Object.fromEntries(rows[0].map((h, i) => [h, i]));
   const maps = new Map();
+  const years = new Map();
   for (let i = 1; i < rows.length; i++) {
-    if (rows[i][col.GameId] && rows[i][col.Map]) maps.set(rows[i][col.GameId], rows[i][col.Map]);
+    const id = rows[i][col.GameId];
+    if (!id) continue;
+    if (rows[i][col.Map]) maps.set(id, rows[i][col.Map]);
+    const y = parseInt(rows[i][col.Date], 10); // Date is a year or YYYY-MM-DD
+    if (y) years.set(id, y);
   }
-  return maps;
+  return { maps, years };
 }
 
 // Pooled per-map stat profile from symmetric (RED/BLUE) games: the absolute
@@ -232,8 +240,8 @@ function observedZ(players) {
 function main() {
   const apply = process.argv.includes("--apply");
   const { priors, rows: combinedRows, col } = loadPriors();
+  const { maps: gameMaps } = loadGameMeta();
   const games = loadGames();
-  const gameMaps = loadGameMaps();
   const mapScorers = buildMapBaselines(games, gameMaps);
 
   // Default prior for players with no list history: median of the priors of
