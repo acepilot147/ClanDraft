@@ -111,6 +111,7 @@ Where a merge left two rows in the same year, the higher OVR was kept.
 | RICESREVENGE | ricexdx3 | current name; same account as the HowToEatRice merge above |
 | Craidd | GreetingsWarmaster | current name; history carries SenorCraidd, FaZeCRAIDD, Craidgod, craidxdx3 |
 | Flamedxx | notflamedd | current name; history carries fIamedxx (capital-I), opfIamed, SireFlamed, FL4MEED |
+| SaraiReaper | YuliReaper | current name (id in RobloxNames; history carries SaraiReaper, sarai_x2v2, khavence) |
 | mxrced | mycallended | current name; history carries MERCSRETURN, 222MXRC, mercsanity |
 | yxng_wes | eviIwesly | current name (capital-I; scoreboards render "evilwesly"); history carries Yxng_Wes, wesIogic, WarehouseDocksOrdana |
 
