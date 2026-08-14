@@ -58,6 +58,17 @@ const TIER_LOCK = 97;
 // Hand exceptions from a_cemaster: stats never reduce these players'
 // ratings (leadership value not visible in scoreboards). Boosts still apply.
 const NO_DOWN = new Set(["Avaitron", "aspirrant"]);
+// Unknown-player initialization: a player with no list history is NOT
+// started at a flat default - their first game's observed z (which already
+// blends the map-average baseline when the map has one) is inverted through
+// the same rating->performance model used for expectations. Bayes-shrunk:
+//   init = anchorMean + RHO * anchorSd * z
+// anchored on the lobby-mates who DO have ratings. That first game is
+// consumed by the initialization (no double-counted Kalman update), and the
+// posterior starts appropriately wide. Needs a minimum number of rated
+// lobby-mates to anchor; otherwise falls back to the flat default.
+const MIN_INIT_ANCHORS = 5;
+const INIT_CLAMP = [65, TIER_LOCK - 1];
 // Game years are recorded in Games.csv for provenance but deliberately NOT
 // modeled: a_cemaster's call (2026-08) - the 2024-2026 era gap is minor, so
 // all games count equally regardless of age. Prior sigma still reflects how
@@ -101,25 +112,47 @@ function loadPriors() {
   // A "Raid nudge" row that absorbed another source's row carries that row's
   // original value in NudgeBase - that value is the recoverable prior; nudge
   // rows without a base (players first rated by the nudge) carry none.
+  // Two prior tiers. Real list ratings always win. The July "Raid stats"
+  // hand-scores are derived from the raid games themselves, so they are NOT
+  // independent evidence - but they encode lobby-quality judgment the model
+  // lacks (2024 pub lobbies were far weaker than their few rated players
+  // suggest). For a player with NO list rating they become the prior, and
+  // the games of years up to the hand-score's year are consumed by it
+  // (skipped as evidence) so the same performance isn't counted twice.
   const best = new Map();
+  const handRaid = new Map();
   for (let i = 1; i < rows.length; i++) {
     const r = rows[i];
     const name = r[col.LegacyName];
     if (!name) continue;
+    const year = parseInt(r[col.Year], 10) || 0;
     let ovr;
     if (r[col.Source] === NUDGE_SOURCE) {
-      const m = /^(\d+(?:\.\d+)?)/.exec(r[col.NudgeBase] || "");
+      const m = /^(\d+(?:\.\d+)?)\s*\((.+)\)\s*$/.exec(r[col.NudgeBase] || "");
       if (!m) continue;
       ovr = parseFloat(m[1]);
-    } else if (EXCLUDED_SOURCES.has(r[col.Source])) {
+      if (m[2] === "Raid stats") {
+        // era row that absorbed a hand-score: recover it as the hand prior
+        const prev = handRaid.get(name);
+        if (isFinite(ovr) && (!prev || year > prev.year)) handRaid.set(name, { ovr, year });
+        continue;
+      }
+    } else if (r[col.Source] === "Raid stats") {
+      ovr = parseFloat(r[col.OVR]);
+      const prev = handRaid.get(name);
+      if (isFinite(ovr) && (!prev || year > prev.year)) handRaid.set(name, { ovr, year });
       continue;
     } else {
       ovr = parseFloat(r[col.OVR]);
     }
-    const year = parseInt(r[col.Year], 10) || 0;
     if (!isFinite(ovr)) continue;
     const prev = best.get(name);
     if (!prev || year > prev.year) best.set(name, { ovr, year, row: r });
+  }
+  // hand-scores fill in only where no list rating exists, flagged so the
+  // update loop knows to consume the games they were derived from
+  for (const [name, h] of handRaid) {
+    if (!best.has(name)) best.set(name, { ovr: h.ovr, year: h.year, handRaid: true });
   }
   return { priors: best, rows, col };
 }
@@ -240,8 +273,18 @@ function observedZ(players) {
 function main() {
   const apply = process.argv.includes("--apply");
   const { priors, rows: combinedRows, col } = loadPriors();
-  const { maps: gameMaps } = loadGameMeta();
-  const games = loadGames();
+  const { maps: gameMaps, years: gameYears } = loadGameMeta();
+  const yearOf = (id) => gameYears.get(id) || +NUDGE_YEAR;
+  // Years don't weight the math (all games count equally - a_cemaster's
+  // call), but games are walked oldest-era-first so that a snapshot taken at
+  // each year boundary reflects everything known up to that year. Those
+  // snapshots become the player's 2024/2025/... rows on --apply; the final
+  // state after all games is the NUDGE_YEAR row.
+  const games = loadGames().sort(
+    (a, b) =>
+      yearOf(a[0]) - yearOf(b[0]) ||
+      parseInt(a[0].replace(/\D/g, ""), 10) - parseInt(b[0].replace(/\D/g, ""), 10)
+  );
   const mapScorers = buildMapBaselines(games, gameMaps);
 
   // Default prior for players with no list history: median of the priors of
@@ -265,12 +308,32 @@ function main() {
         sumSurprise: 0,
         priorOvr: p ? p.ovr : null,
         priorYear: p ? p.year : null,
+        // hand-scored prior: games from years <= priorYear are its source
+        // material and must not be re-counted as evidence
+        consumeThrough: p && p.handRaid ? p.year : null,
       });
     }
     return state.get(name);
   };
 
+  // snapshots: name -> Map(year -> {ovr, games}) taken at each year boundary
+  const snapshots = new Map();
+  let snapYear = null;
+  let playedThisYear = new Map(); // name -> games played in the current year
+  const flushYear = () => {
+    for (const [name, n] of playedThisYear) {
+      if (PLACEHOLDER.test(name)) continue;
+      if (!snapshots.has(name)) snapshots.set(name, new Map());
+      snapshots.get(name).set(snapYear, { ovr: Math.round(state.get(name).mean), games: n });
+    }
+    playedThisYear = new Map();
+  };
+
   for (const [gameId, players] of games) {
+    const gameYear = yearOf(gameId);
+    if (snapYear !== null && gameYear !== snapYear) flushYear();
+    snapYear = gameYear;
+    for (const p of players) playedThisYear.set(p.name, (playedThisYear.get(p.name) || 0) + 1);
     // Asymmetric-faction games (e.g. 12 Astartes vs 8 Xenos) have
     // structurally different stat scales per side, so each faction is scored
     // on its own curve with its own expectation baseline and no cross-team
@@ -293,6 +356,29 @@ function main() {
           clamp((1 - W_MAP) * z + W_MAP * mapScore(group[i]), -WINSOR_Z, WINSOR_Z)
         );
 
+      // initialize brand-new unknowns from their own performance, anchored
+      // on the rated members of this group (see MIN_INIT_ANCHORS note)
+      const anchors = group
+        .filter((p) => state.has(p.name) || priors.has(p.name))
+        .map((p) => (state.has(p.name) ? state.get(p.name).mean : priors.get(p.name).ovr));
+      const initializedNow = new Set();
+      if (anchors.length >= MIN_INIT_ANCHORS) {
+        const aMean = mean(anchors);
+        const aSd = Math.max(sd(anchors), LOBBY_SD_FLOOR);
+        group.forEach((p, i) => {
+          if (state.has(p.name) || priors.has(p.name)) return;
+          state.set(p.name, {
+            mean: clamp(aMean + RHO * aSd * zObs[i], INIT_CLAMP[0], INIT_CLAMP[1]),
+            var: aSd * aSd * (1 - RHO * RHO),
+            games: 1,
+            sumSurprise: 0,
+            priorOvr: null,
+            priorYear: null,
+          });
+          initializedNow.add(p.name);
+        });
+      }
+
       // group expectation from CURRENT posterior means (sequential filter)
       const ratings = group.map((p) => getState(p.name).mean);
       const groupMean = mean(ratings);
@@ -303,7 +389,12 @@ function main() {
       }
 
       group.forEach((p, i) => {
+        if (initializedNow.has(p.name)) return; // this game set their level
         const s = getState(p.name);
+        if (s.consumeThrough != null && gameYear <= s.consumeThrough) {
+          s.games += 1; // hand-scored prior already encodes this game
+          return;
+        }
         const opp = Object.keys(teamMean).find((t) => t !== p.team);
         const asym = opp != null ? (teamMean[p.team] - teamMean[opp]) / groupSd : 0;
         const zExp = (RHO * (s.mean - groupMean)) / groupSd + TEAM_BETA * asym;
@@ -325,6 +416,8 @@ function main() {
   }
 
   // ---- report ----
+  flushYear();
+
   const out = [...state.entries()]
     .filter(([name]) => !PLACEHOLDER.test(name))
     .map(([name, s]) => ({
@@ -340,9 +433,19 @@ function main() {
     .sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta));
 
   const reportRows = [
-    ["Canonical", "Games", "PriorOVR", "PriorYear", "NewOVR", "Delta", "PosteriorSigma", "AvgSurpriseZ"],
+    ["Canonical", "Year", "Games", "PriorOVR", "PriorYear", "NewOVR", "Delta", "PosteriorSigma", "AvgSurpriseZ"],
+    // era snapshot rows: the player's estimate as of that year's games,
+    // written to that year's row on --apply
+    ...[...snapshots.entries()]
+      .flatMap(([name, years]) =>
+        [...years.entries()]
+          .filter(([y]) => String(y) !== NUDGE_YEAR)
+          .map(([y, snap]) => [name, y, snap.games, "", "", snap.ovr, "", "", ""])
+      )
+      .sort((a, b) => a[1] - b[1] || String(a[0]).localeCompare(String(b[0]))),
     ...out.map((r) => [
       r.name,
+      NUDGE_YEAR,
       r.games,
       r.prior != null ? r.prior : `(none; default ${DEFAULT_PRIOR})`,
       r.priorYear != null ? r.priorYear : "",
@@ -377,13 +480,20 @@ function main() {
   for (let i = 1; i < combinedRows.length; i++)
     while (combinedRows[i].length < header.length) combinedRows[i].push("");
 
-  const byName2026 = new Map(); // name -> row indices with Year=2026
+  const byNameYear = new Map(); // "name year" -> row indices
   for (let i = 1; i < combinedRows.length; i++) {
     const r = combinedRows[i];
-    if (r[col.Year] !== NUDGE_YEAR) continue;
-    if (!byName2026.has(r[col.LegacyName])) byName2026.set(r[col.LegacyName], []);
-    byName2026.get(r[col.LegacyName]).push(i);
+    const k = r[col.LegacyName] + " " + r[col.Year];
+    if (!byNameYear.has(k)) byNameYear.set(k, []);
+    byNameYear.get(k).push(i);
   }
+
+  // one upsert per (player, year): era snapshots first, final year from `out`
+  const upserts = [];
+  for (const [name, years] of snapshots)
+    for (const [y, snap] of years)
+      if (String(y) !== NUDGE_YEAR) upserts.push({ name, year: String(y), value: snap.ovr });
+  for (const r of out) upserts.push({ name: r.name, year: NUDGE_YEAR, value: r.post });
   // newest row of any source, to copy Clan/Leader/Class/RCL metadata from
   const newestAny = new Map();
   for (let i = 1; i < combinedRows.length; i++) {
@@ -398,8 +508,8 @@ function main() {
   let updated = 0;
   let added = 0;
   let absorbed = 0;
-  for (const r of out) {
-    const idxs = byName2026.get(r.name) || [];
+  for (const u of upserts) {
+    const idxs = byNameYear.get(u.name + " " + u.year) || [];
     // prefer the existing nudge row; otherwise take over the highest-OVR
     // row of the year (matches the historical dedup rule in ALIASES.md)
     let keep = idxs.find((i) => combinedRows[i][col.Source] === NUDGE_SOURCE);
@@ -421,14 +531,14 @@ function main() {
         if (!row[iBase]) row[iBase] = `${row[col.OVR]} (${row[col.Source] || "unsourced"})`;
         row[col.Source] = NUDGE_SOURCE;
       }
-      row[col.OVR] = String(r.post);
+      row[col.OVR] = String(u.value);
       updated++;
     } else {
-      const meta = newestAny.get(r.name);
+      const meta = newestAny.get(u.name);
       const row = header.map(() => "");
-      row[col.LegacyName] = r.name;
-      row[col.OVR] = String(r.post);
-      row[col.Year] = NUDGE_YEAR;
+      row[col.LegacyName] = u.name;
+      row[col.OVR] = String(u.value);
+      row[col.Year] = u.year;
       row[col.Source] = NUDGE_SOURCE;
       if (meta) for (const f of META_COLS) row[col[f]] = meta.r[col[f]];
       combinedRows.push(row);
