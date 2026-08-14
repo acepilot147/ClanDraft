@@ -107,13 +107,14 @@ Where a merge left two rows in the same year, the higher OVR was kept.
 | zeustage | zeustide | current name |
 | moooshiimoooshii | eviImooshippuzthe4 | current name - capital-I obfuscation, reads "evil..." on the scoreboard |
 | Tenshi | tenshl, YukiYuna_IsAHero, t_enshimaster | one account (id 61000567, current: YukiYuna_IsAHero); the literal name "Tenshi" on Roblox (id 192259) is an UNRELATED account - the RobloxNames.csv "Tenshi" row points at the wrong person |
-| Jesxaiah | Jexgraal | current name (74-name rename history; jesxaiah among them) |
+| Jesxaiah | Jexgraal, GayInfantry, g_jex | serial renamer - one account, now g_jex; history carries jesxaiah, Jexgraal |
 | RICESREVENGE | ricexdx3 | current name; same account as the HowToEatRice merge above |
 | Craidd | GreetingsWarmaster | current name; history carries SenorCraidd, FaZeCRAIDD, Craidgod, craidxdx3 |
 | Flamedxx | notflamedd | current name; history carries fIamedxx (capital-I), opfIamed, SireFlamed, FL4MEED |
 | SaraiReaper | YuliReaper | current name (id in RobloxNames; history carries SaraiReaper, sarai_x2v2, khavence) |
 | mxrced | mycallended | current name; history carries MERCSRETURN, 222MXRC, mercsanity |
 | yxng_wes | eviIwesly | current name (capital-I; scoreboards render "evilwesly"); history carries Yxng_Wes, wesIogic, WarehouseDocksOrdana |
+| luaIogic | lualogic | capital-I account (history: vndz, MNSD_Hack); scoreboards render "lualogic" - the literal lowercase account is unrelated (no history). Confirmed by a_cemaster, M14 |
 
 ## Do NOT merge (distinct players with confusable names)
 
@@ -121,6 +122,7 @@ Where a merge left two rows in the same year, the higher OVR was kept.
 - `xbsightsss` ≠ `XBSIGHTS` - two different players; keep separate.
 - `EnterScreenName` is a real player, not a placeholder - keep as-is.
 - `xeffns` = `prayalott` - excluded from the SOL Summer 2024 import because prayalott self-submitted their own score (avoid self-bias / double-count).
+- `Deadl1y` ≠ `deadlyful` - distinct accounts (Deadl1y has no rename history; both appeared in the same Ordana raid set on different teams/games).
 - `8kr6` ≠ `s9ense` - the `8kr6NoAuraNoob` in s9ense's rename history is a mock-name, not an alt.
 - `G2_RCM` vs `G2_RCMI` (in n3g_ative/reswrn's rename history) - unresolved, likely different people; kept separate.
 - `EvilWesly` (literal, id in RobloxNames "evilwesly" row) ≠ `eviIwesly` (capital-I, =yxng_wes) - the literal account has no clanning history; scoreboard "evilwesly" means the capital-I clanner.

@@ -206,7 +206,8 @@ function buildMapBaselines(games, gameMaps) {
   for (const [id, players] of games) {
     const map = gameMaps.get(id);
     if (!map) continue;
-    if (players.some((p) => p.team !== "RED" && p.team !== "BLUE")) continue;
+    // attack/defense stats don't pool into map profiles
+    if (players[0].mode === "RAID" || players.some((p) => p.team === "RAID")) continue;
     if (!pools.has(map)) pools.set(map, { rows: [], gameCount: 0 });
     const pool = pools.get(map);
     pool.rows.push(...players);
@@ -340,7 +341,12 @@ function main() {
     // asymmetry term. Symmetric pickup lobbies use RED/BLUE team labels and
     // share one lobby-wide curve; named-faction labels signal asymmetry.
     const teams = [...new Set(players.map((p) => p.team))];
-    const grouped = teams.length > 1 && teams.some((t) => t !== "RED" && t !== "BLUE");
+    // Only true raid games (attack vs defense - Mode=RAID or a side literally
+    // labeled RAID, as in the M3/M6 fort defenses) score each side on its own
+    // curve. Named teams on symmetric maps (Astartes/Xenos on Ordana) are
+    // just skins over an even lobby - a_cemaster's call, 2026-08.
+    const grouped =
+      teams.length > 1 && (players[0].mode === "RAID" || teams.includes("RAID"));
     const groups = grouped
       ? teams.map((t) => players.filter((p) => p.team === t))
       : [players];
