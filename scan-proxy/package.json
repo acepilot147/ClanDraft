@@ -1,0 +1,9 @@
+{
+  "name": "clandraft-scan-proxy",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Holds the Anthropic API key for the ratings.html board scanner; the public page posts screenshots here.",
+  "main": "server.js",
+  "scripts": { "start": "node server.js" },
+  "engines": { "node": ">=18" }
+}

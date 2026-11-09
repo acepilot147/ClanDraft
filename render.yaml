@@ -4,6 +4,20 @@ services:
     runtime: static
     # Raw data stores (raid stats, game provenance, nudge output, compressed
     # screenshots) stay in the repo but are stripped from the published site.
-    buildCommand: "rm -rf RaidStats.csv Games.csv NudgeReport.csv Screenshots"
+    buildCommand: "rm -rf RaidStats.csv Games.csv NudgeReport.csv Screenshots raids.sqlite raids.sqlite-wal raids.sqlite-shm"
     staticPublishPath: .
     pullRequestPreviewsEnabled: false
+  # Board scanner: a tiny Node service that holds the Anthropic API key (set ANTHROPIC_API_KEY in the Render dashboard;
+  # sync: false keeps it out of this file). ratings.html posts screenshots to https://clandraft-scan.onrender.com/read.
+  - type: web
+    name: clandraft-scan
+    runtime: node
+    plan: free
+    rootDir: scan-proxy
+    buildCommand: ""
+    startCommand: node server.js
+    envVars:
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: SCAN_RATE_PER_HOUR
+        value: "40"
